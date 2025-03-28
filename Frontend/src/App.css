@@ -1,0 +1,66 @@
+* {
+  font-family: "Liter", serif;
+  font-weight: 400;
+  font-style: normal;
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+/* .login-bg {
+  background-image: url(assets/Images/bg.jpg);
+  background-repeat: repeat;
+} */
+
+/* ADMIN BG */
+.admin-bg {
+  background-image: url(assets/Images/bg.png);
+  background-repeat: repeat;
+  height: 100vh;
+}
+.login-bg {
+  background-image: url(assets/Images/bg1.jpg);
+  background-size: cover; /* Ensures the image covers the entire area */
+  background-position: center; /* Centers the image */
+  background-repeat: no-repeat; /* Prevents repetition */
+  background-attachment: fixed; /* Keeps the image fixed while scrolling */
+}
+
+.login-bg::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5); /* 50% opacity black overlay */
+  z-index: 1;
+}
+
+.login-bg > * {
+  position: relative;
+  z-index: 2; /* Ensures content stays above the overlay */
+}
+
+/* CARD DIVISION */
+.nav-color {
+  background: linear-gradient(to left, #3498db, #2980b9); /* Blue Gradient */
+}
+
+.custom-card {
+  background: linear-gradient(to bottom, #2980b9, #1d5880); /* Blue Gradient */
+  /* color: white;
+  border-radius: 10px;
+  box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3); Darker Shadow */
+  transition: transform 0.2s ease-in-out;
+}
+
+.custom-card:hover {
+  transform: scale(1.05); /* Slight pop effect */
+}
+/* table header SQD */
+th {
+  white-space: nowrap;
+  font-size: 15px;
+  text-align: center;
+}
