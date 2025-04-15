@@ -12,7 +12,9 @@ export default defineConfig({
       ),
     },
   },
-  server: {
-    host: true,
-  },
+  // server: {
+  //   proxy: {
+  //     '/api': 'http://localhost:5000'
+  //   }
+  // }
 });

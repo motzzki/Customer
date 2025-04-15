@@ -28,7 +28,6 @@ function App() {
         <Route path="/citizen-charter" element={<CitizenCharter />} />
         <Route path="/citizen-charter2" element={<CitizenCharter2 />} />
         <Route path="/citizen-charter3" element={<CitizenCharter3 />} />
-        <Route path="/client-satisfaction" element={<ClientSatisfaction />} />
         <Route path="/thank-you" element={<Thankyou />} />
 
         <Route element={<Protected />}>

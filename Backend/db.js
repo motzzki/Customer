@@ -11,4 +11,13 @@ const pool = createPool({
   multipleStatements: true,
 }).promise();
 
+pool.getConnection()
+  .then((connection) => {
+    console.log("MySQL connection successful!");
+    connection.release();
+  })
+  .catch((err) => {
+    console.error("Error connecting to MySQL:", err);
+  });
+
 export default pool;
