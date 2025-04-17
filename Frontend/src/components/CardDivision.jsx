@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Button, Card, CardBody } from "react-bootstrap";
 import axios from "axios";
 import { API_BASE_URL } from "../config.js";
 import { Link } from "react-router-dom";
-import { FaPlus, FaRegEdit, FaTrash, FaSearch } from "react-icons/fa";
+import { FaPlus, FaRegEdit, FaSearch } from "react-icons/fa";
 import AddDivisionModal from "./modal/AddDivisionModal.jsx";
 import EditDivisionModal from "./modal/EditDivisionModal.jsx";
+import { AuthContext } from "../auth/AuthContext.jsx";
 
 const CardDivision = () => {
   const [divisions, setDivisions] = useState([]);
@@ -14,6 +15,8 @@ const CardDivision = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedDivision, setSelectedDivision] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+
+  const { user } = useContext(AuthContext);
 
   const handleShow = () => setShowModal(true);
   const handleClose = () => setShowModal(false);
@@ -29,8 +32,14 @@ const CardDivision = () => {
 
   const fetchDivisions = async () => {
     try {
+      const token = localStorage.getItem("token");
       const response = await axios.get(
-        `${API_BASE_URL}/divisions/get-divisions`
+        `${API_BASE_URL}/divisions/get-divisions`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       setDivisions(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
@@ -118,26 +127,18 @@ const CardDivision = () => {
                         </CardBody>
                       </Link>
                       <div className="position-absolute top-0 end-0 m-2 d-flex gap-2">
-                        <Button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleShowEdit(division);
-                          }}
-                          className="btn btn-warning btn-sm opacity-75 hover-opacity-100"
-                        >
-                          <FaRegEdit />
-                        </Button>
-                        <Button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleAlert("Delete clicked!");
-                          }}
-                          className="btn btn-danger btn-sm opacity-75 hover-opacity-100"
-                        >
-                          <FaTrash />
-                        </Button>
+                        {user?.role === "admin" && (
+                          <Button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleShowEdit(division);
+                            }}
+                            className="btn btn-warning btn-sm opacity-75 hover-opacity-100"
+                          >
+                            <FaRegEdit />
+                          </Button>
+                        )}
                       </div>
                     </Card>
                   </div>

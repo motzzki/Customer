@@ -48,8 +48,9 @@ function clientInformation() {
 
   const handleAgeChange = (event) => {
     const value = event.target.value;
-    setAge(value);
-    // sessionStorage.setItem("age", value);
+    if (/^\d*$/.test(value)) {
+      setAge(value);
+    }
   };
 
   const handleSexChange = (event) => {
@@ -65,11 +66,11 @@ function clientInformation() {
   };
 
   return (
-    <div
-      className="pt-lg-5 pb-lg-5"
-      style={{ backgroundColor: "#edf3fc", height: "100vh" }}
-    >
-      <div className="w-75 m-auto border rounded shadow-lg content">
+    <div className="pt-lg-5 pb-lg-5" style={{ backgroundColor: "#edf3fc" }}>
+      <div
+        className="w-75 m-auto border rounded shadow-lg content"
+        style={{ backgroundColor: "#f5f9ff", width: "80%" }}
+      >
         <Header />
         <div className="container">
           <div className="m-auto">
@@ -84,9 +85,10 @@ function clientInformation() {
               <p className="info">Age</p>
               <Form.Control
                 className="info"
-                type="number"
-                min={0}
-                placeholder="The value must be a number"
+                type="text"
+                inputMode="numeric"
+                pattern="\d*"
+                placeholder="Enter your age"
                 value={age}
                 onChange={handleAgeChange}
               />

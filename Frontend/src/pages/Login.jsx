@@ -24,7 +24,7 @@ import Swal from "sweetalert2";
 import { API_BASE_URL } from "../config";
 import { CgLogOut } from "react-icons/cg";
 import { Link } from "react-router-dom";
-import '../style/Login.css'
+import "../style/Login.css";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -107,13 +107,8 @@ const Login = () => {
           </Link>
         </OverlayTrigger>
 
-        <Card
-          className="login-card"
-        >
-          <CardImg
-            src={logo}
-            className="card-img"
-          />
+        <Card className="login-card">
+          <CardImg src={logo} className="card-img" />
           <CardTitle className="fw-bold">SDO CABUYAO</CardTitle>
           <CardBody className="d-flex flex-column justify-content-center w-100">
             <Form
@@ -168,7 +163,13 @@ const Login = () => {
                 }}
                 disabled={loading}
               >
-                {loading ? "Logging in..." : <><FaSignInAlt className="me-2" /> Login</>}
+                {loading ? (
+                  "Logging in..."
+                ) : (
+                  <>
+                    <FaSignInAlt className="me-2" /> Login
+                  </>
+                )}
               </Button>
             </Form>
           </CardBody>

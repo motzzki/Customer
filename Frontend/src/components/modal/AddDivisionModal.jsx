@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Modal, Button, Form, Alert } from "react-bootstrap";
 import axios from "axios";
 import { API_BASE_URL } from "../../config";
+import Swal from "sweetalert2";
 
 const AddDivisionModal = ({ show, handleClose, handleSave }) => {
   const [divisionData, setDivisionData] = useState({
@@ -16,7 +17,7 @@ const AddDivisionModal = ({ show, handleClose, handleSave }) => {
       const timer = setTimeout(() => {
         setError("");
         setSuccessMessage("");
-      }, 3000);
+      }, 2000);
       return () => clearTimeout(timer);
     }
   }, [error, successMessage]);
@@ -29,10 +30,19 @@ const AddDivisionModal = ({ show, handleClose, handleSave }) => {
     }));
   };
 
-  const handleSubmit = async () => {
-    setError("");
-    setSuccessMessage("");
+  const Toast = Swal.mixin({
+    toast: true,
+    position: "top-end",
+    showConfirmButton: false,
+    timer: 1500,
+    timerProgressBar: true,
+    didOpen: (toast) => {
+      toast.onmouseenter = Swal.stopTimer;
+      toast.onmouseleave = Swal.resumeTimer;
+    },
+  });
 
+  const handleSubmit = async () => {
     if (!divisionData.division_name.trim()) {
       setError("Division name is required!");
       return;
@@ -49,18 +59,29 @@ const AddDivisionModal = ({ show, handleClose, handleSave }) => {
           },
         }
       );
-      setSuccessMessage(response.data.message);
+
+      Toast.fire({
+        icon: "success",
+        title: response.data.message || "Division updated successfully",
+      });
 
       handleSave();
       setDivisionData({ division_name: "", description: "" });
       setTimeout(handleClose, 2000);
+      setError("");
     } catch (error) {
       setError(error.response?.data?.message || "Something went wrong");
     }
   };
 
   return (
-    <Modal show={show} onHide={handleClose} centered>
+    <Modal
+      show={show}
+      onHide={handleClose}
+      centered
+      backdrop="static"
+      keyboard={false}
+    >
       <Modal.Header closeButton className="bg-primary text-white">
         <Modal.Title className="fw-bold">Add New Division</Modal.Title>
       </Modal.Header>

@@ -108,18 +108,37 @@ export const getFeedbackByDivision = async (req, res) => {
 
   try {
     const [feedback] = await pool.execute(
-      `SELECT name, age, gender, customer_type, sub_division_name, feedback.*
-       FROM feedback
-       INNER JOIN customer ON customer_id = feedback.fk_customer
-       INNER JOIN division ON division_id = feedback.fk_division
-       LEFT JOIN sub_division ON sub_division_id = feedback.fk_subdivision
-       WHERE fk_division = ?`,
+      `SELECT 
+        c.age,
+        c.gender,
+        c.customer_type,
+        f.service,
+        f.charter_one,
+        f.charter_two,
+        f.charter_three,
+        MAX(IF(q.label = 'SQD1 - Responsive', fa.answer_value, NULL)) AS SQD1,
+        MAX(IF(q.label = 'SQD2 - Reliability', fa.answer_value, NULL)) AS SQD2,
+        MAX(IF(q.label = 'SQD3 - Access and Facilities', fa.answer_value, NULL)) AS SQD3,
+        MAX(IF(q.label = 'SQD4 - Communication', fa.answer_value, NULL)) AS SQD4,
+        MAX(IF(q.label = 'SQD5 - Costs', fa.answer_value, NULL)) AS SQD5,
+        MAX(IF(q.label = 'SQD6 - Integrity', fa.answer_value, NULL)) AS SQD6,
+        MAX(IF(q.label = 'SQD7 - Assurance', fa.answer_value, NULL)) AS SQD7,
+        MAX(IF(q.label = 'SQD8 - Outcome', fa.answer_value, NULL)) AS SQD8,
+        f.remarks,
+        f.created_at
+      FROM feedback f
+      JOIN customer c ON c.customer_id = f.fk_customer
+      LEFT JOIN feedback_answers fa ON fa.fk_feedback = f.feedback_id
+      LEFT JOIN questions q ON q.questions_id = fa.fk_questions
+      WHERE f.fk_division = ?
+      GROUP BY f.feedback_id
+      ORDER BY f.created_at DESC`,
       [division_id]
     );
 
     const mappedFeedback = feedback.map((item) => ({
       ...item,
-      customerType:
+      customer_type:
         item.customer_type === 1
           ? "Business"
           : item.customer_type === 2
@@ -131,7 +150,7 @@ export const getFeedbackByDivision = async (req, res) => {
 
     res.json(mappedFeedback);
   } catch (error) {
-    console.error(error);
+    console.error("Error getting feedback by division:", error.message);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -148,16 +167,9 @@ export const insertFeedback = async (req, res) => {
     chart1,
     chart2,
     chart3,
-    sqd1,
-    sqd2,
-    sqd3,
-    sqd4,
-    sqd5,
-    sqd6,
-    sqd7,
-    sqd8,
     remarks,
     created_at,
+    answers,
   } = req.body;
 
   if (!age || !gender || !type || !divisionId || !service || !created_at) {
@@ -175,15 +187,13 @@ export const insertFeedback = async (req, res) => {
     if (!customerId) {
       return res.status(400).json({ message: "Failed to create customer." });
     }
-
+    //18
     const [feedbackResult] = await pool.execute(
       `INSERT INTO feedback (
         fk_customer, fk_division, fk_subdivision, fk_service, service, 
-        charter_one, charter_two, charter_three, 
-        sqd1, sqd2, sqd3, sqd4, sqd5, sqd6, sqd7, sqd8, 
-        remarks, created_at
+        charter_one, charter_two, charter_three, remarks, created_at
       ) 
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      VALUES (?,?,?,?,?,?,?,?,?,?)`,
       [
         customerId,
         divisionId,
@@ -193,18 +203,25 @@ export const insertFeedback = async (req, res) => {
         chart1,
         chart2,
         chart3,
-        sqd1,
-        sqd2,
-        sqd3,
-        sqd4,
-        sqd5,
-        sqd6,
-        sqd7,
-        sqd8,
         remarks,
         created_at,
       ]
     );
+
+    const feedbackId = feedbackResult.insertId;
+
+    if (Array.isArray(answers)) {
+      const values = answers.map((ans) => [
+        feedbackId,
+        ans.questionId,
+        ans.value,
+      ]);
+      await pool.query(
+        `INSERT INTO feedback_answers (fk_feedback, fk_questions, answer_value)
+         VALUES ?`,
+        [values]
+      );
+    }
 
     if (feedbackResult.affectedRows === 0) {
       return res.status(400).json({ message: "Failed to add feedback." });
@@ -358,5 +375,15 @@ export const getFeedBackData = async (req, res) => {
   } catch (error) {
     console.error("Error fetching feedback data:", error);
     res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const getQuestionnaire = async (req, res) => {
+  try {
+    const [questionnaires] = await pool.execute("SELECT * FROM questions");
+    res.status(200).json(questionnaires);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
   }
 };

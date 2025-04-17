@@ -38,8 +38,15 @@ const DivisionPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const token = localStorage.getItem("token");
+
         const response = await axios.get(
-          `${API_BASE_URL}/divisions/services-and-subdivisions/${division_id}`
+          `${API_BASE_URL}/divisions/services-and-subdivisions/${division_id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
         );
         setInfo(response.data);
 
@@ -81,6 +88,8 @@ const DivisionPage = () => {
 
   const fetchFeedbackData = async (division, subdivision, service) => {
     try {
+      const token = localStorage.getItem("token");
+
       const response = await axios.get(
         `${API_BASE_URL}/divisions/feedback-data`,
         {
@@ -88,6 +97,11 @@ const DivisionPage = () => {
             fk_division: division,
             fk_subdivision: subdivision,
             fk_service: service,
+          },
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -164,8 +178,14 @@ const DivisionPage = () => {
 
   const fetchFeedbackByDivision = async (division_id) => {
     try {
+      const token = localStorage.getItem("token");
       const response = await axios.get(
-        `${API_BASE_URL}/divisions/get-feedback/${division_id}`
+        `${API_BASE_URL}/divisions/get-feedback/${division_id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
 
       const mappedData = response.data.map((item) => ({
@@ -430,7 +450,7 @@ const DivisionPage = () => {
                 <tr key={index} className="align-middle">
                   <td className="text-center">{item.age}</td>
                   <td className="text-center">{item.gender.toUpperCase()}</td>
-                  <td className="text-center">{item.customerType}</td>
+                  <td className="text-center">{item.customer_type}</td>
                   {hasSubDivision && (
                     <td className="text-center">{item.sub_division_name}</td>
                   )}
@@ -446,14 +466,14 @@ const DivisionPage = () => {
                       ? item.charter_three.toUpperCase()
                       : "-"}
                   </td>
-                  <td className="text-center">{item.sqd1}</td>
-                  <td className="text-center">{item.sqd2}</td>
-                  <td className="text-center">{item.sqd3}</td>
-                  <td className="text-center">{item.sqd4}</td>
-                  <td className="text-center">{item.sqd5}</td>
-                  <td className="text-center">{item.sqd6}</td>
-                  <td className="text-center">{item.sqd7}</td>
-                  <td className="text-center">{item.sqd8}</td>
+                  <td className="text-center">{item.SQD1}</td>
+                  <td className="text-center">{item.SQD2}</td>
+                  <td className="text-center">{item.SQD3}</td>
+                  <td className="text-center">{item.SQD4}</td>
+                  <td className="text-center">{item.SQD5}</td>
+                  <td className="text-center">{item.SQD6}</td>
+                  <td className="text-center">{item.SQD7}</td>
+                  <td className="text-center">{item.SQD8}</td>
                   <td className="text-center text-success fw-semibold">
                     {item.remarks ? item.remarks : "-"}
                   </td>

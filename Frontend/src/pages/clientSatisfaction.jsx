@@ -13,65 +13,41 @@ const ClientSatisfaction = () => {
     return JSON.parse(sessionStorage.getItem("userData")) || {};
   });
   const [remarks, setRemarks] = useState("");
+  const [loading, setLoading] = useState(true);
 
-  const questions = [
-    {
-      id: "SQD1",
-      text: "I spent an acceptable amount of time to complete my transaction",
-      dimension: "Responsiveness",
-    },
-    {
-      id: "SQD2",
-      text: "The office accurately informed and followed the transaction's requirements and steps",
-      dimension: "Reliability",
-    },
-    {
-      id: "SQD3",
-      text: "My transaction (including steps and payment) was simple and convenient",
-      dimension: "Access and Facilities",
-    },
-    {
-      id: "SQD4",
-      text: "I easily found information about my transaction from the office or its website",
-      dimension: "Communication",
-    },
-    {
-      id: "SQD5",
-      text: "I paid an acceptable amount of fees for my transaction",
-      dimension: "Costs",
-    },
-    {
-      id: "SQD6",
-      text: "I am confident my transaction was secure",
-      dimension: "Integrity",
-    },
-    {
-      id: "SQD7",
-      text: "The office's support was quick to respond",
-      dimension: "Assurance",
-    },
-    {
-      id: "SQD8",
-      text: "I got what I needed from the government office",
-      dimension: "Outcome",
-    },
-  ];
+  const [questions, setQuestions] = useState([]);
+
+  const fetchQuestions = async () => {
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/divisions/get-questions`
+      );
+      setQuestions(response.data);
+    } catch (error) {
+      console.error("Error fetching questions:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
+    fetchQuestions();
     const savedData = JSON.parse(sessionStorage.getItem("userData")) || {};
     setFormData(savedData);
   }, []);
 
-  const handleSelect = (questionId, value) => {
-    setFormData((prev) => ({ ...prev, [questionId]: value }));
+  const handleSelect = (questionLabel, value) => {
+    const numValue = Number(value);
+
+    setFormData((prev) => ({ ...prev, [questionLabel]: numValue }));
+
     let userData = JSON.parse(sessionStorage.getItem("userData")) || {};
-    userData[questionId] = value;
+    userData[questionLabel] = numValue;
     sessionStorage.setItem("userData", JSON.stringify(userData));
   };
 
   const handleRemarks = (event) => {
     const value = event.target.value;
-
     setRemarks(value);
   };
 
@@ -80,8 +56,9 @@ const ClientSatisfaction = () => {
   };
 
   const handleSubmit = async () => {
-    // Check if all questions are answered
-    const unansweredQuestion = questions.find((q) => !formData[q.id]);
+    const unansweredQuestion = questions.find(
+      (q) => formData[q.label] === undefined
+    );
 
     if (unansweredQuestion) {
       Swal.fire({
@@ -90,7 +67,7 @@ const ClientSatisfaction = () => {
         text: "Please fill in all questions before proceeding!",
       });
 
-      const element = document.getElementById(unansweredQuestion.id);
+      const element = document.getElementById(unansweredQuestion.label);
       if (element) {
         element.scrollIntoView({
           behavior: "smooth",
@@ -101,6 +78,12 @@ const ClientSatisfaction = () => {
     }
 
     try {
+      // Build array of answers
+      const answers = questions.map((q) => ({
+        questionId: q.questions_id,
+        value: formData[q.label],
+      }));
+
       const payload = {
         age: formData.age,
         gender: formData.sex,
@@ -112,16 +95,9 @@ const ClientSatisfaction = () => {
         chart1: formData.charter1 || null,
         chart2: formData.charter2 || null,
         chart3: formData.charter3 || null,
-        sqd1: formData.SQD1,
-        sqd2: formData.SQD2,
-        sqd3: formData.SQD3,
-        sqd4: formData.SQD4,
-        sqd5: formData.SQD5,
-        sqd6: formData.SQD6,
-        sqd7: formData.SQD7,
-        sqd8: formData.SQD8,
         remarks: remarks || null,
         created_at: new Date().toISOString().split("T")[0],
+        answers, // 👈 attach all answers here
       };
 
       const response = await axios.post(
@@ -183,87 +159,92 @@ const ClientSatisfaction = () => {
               className="mb-3 rounded"
               style={{ backgroundColor: "#dfe7f5" }}
             >
-              <table className="table-striped">
-                <thead>
-                  <tr className="d-none d-lg-table-row">
-                    <th></th>
-                    <th className="text-wrap rate">Strongly Agree (5)</th>
-                    <th className="text-wrap rate">Agree (4)</th>
-                    <th className="text-wrap rate">
-                      Neither Agree nor Disagree (3)
-                    </th>
-                    <th className="text-wrap rate">Disagree (2)</th>
-                    <th className="text-wrap rate">Strongly Disagree (1)</th>
-                    <th className="text-wrap rate">Not applicable</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {questions.map((question) => (
-                    <React.Fragment key={question.id}>
-                      <tr className="SQDBQ">
-                        <td colSpan="12" className="question-box">
-                          {question.id} - {question.text} ({question.dimension})
-                        </td>
-                      </tr>
-                      <tr className="SQDBQ">
-                        <td colSpan="12">
-                          <div className="button-container">
-                            {[
-                              { value: "5", label: "Strongly Agree (5)" },
-                              { value: "4", label: "Agree (4)" },
-                              {
-                                value: "3",
-                                label: "Neither Agree nor Disagree (3)",
-                              },
-                              { value: "2", label: "Disagree (2)" },
-                              { value: "1", label: "Strongly Disagree (1)" },
-                              { value: "0", label: "Not applicable" },
-                            ].map((option) => (
-                              <button
-                                key={option.value}
-                                className={`custom-button ${
-                                  formData[question.id] === option.value
-                                    ? "selected"
-                                    : ""
-                                }`}
-                                onClick={() =>
-                                  handleSelect(question.id, option.value)
-                                }
-                              >
-                                {option.label}
-                              </button>
-                            ))}
-                          </div>
-                        </td>
-                      </tr>
-                      <tr className="SQDC">
-                        <td className="SQDQ">
-                          {question.id} - {question.text} ({question.dimension})
-                        </td>
-                        {[5, 4, 3, 2, 1, 0].map((value) => (
-                          <td key={value}>
-                            <Form.Check
-                              inline
-                              label=""
-                              name={question.id}
-                              type="radio"
-                              id={`${question.id}-${value}`}
-                              className="custom-radio"
-                              value={value}
-                              onChange={(e) =>
-                                handleSelect(question.id, e.target.value)
-                              }
-                              checked={
-                                formData[question.id] === value.toString()
-                              }
-                            />
+              {loading ? (
+                <div className="text-center p-3">Loading...</div>
+              ) : (
+                <table className="table-striped">
+                  <thead>
+                    <tr className="d-none d-lg-table-row">
+                      <th></th>
+                      <th className="text-wrap rate">Strongly Agree (5)</th>
+                      <th className="text-wrap rate">Agree (4)</th>
+                      <th className="text-wrap rate">
+                        Neither Agree nor Disagree (3)
+                      </th>
+                      <th className="text-wrap rate">Disagree (2)</th>
+                      <th className="text-wrap rate">Strongly Disagree (1)</th>
+                      <th className="text-wrap rate">Not applicable</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {questions.map((question) => (
+                      <React.Fragment key={question.questions_id}>
+                        <tr className="SQDBQ">
+                          <td colSpan="12" className="question-box">
+                            {question.label} - {question.questions_text}
                           </td>
-                        ))}
-                      </tr>
-                    </React.Fragment>
-                  ))}
-                </tbody>
-              </table>
+                        </tr>
+                        <tr className="SQDBQ">
+                          <td colSpan="12">
+                            <div className="button-container">
+                              {[
+                                { value: 5, label: "Strongly Agree (5)" },
+                                { value: 4, label: "Agree (4)" },
+                                {
+                                  value: 3,
+                                  label: "Neither Agree nor Disagree (3)",
+                                },
+                                { value: 2, label: "Disagree (2)" },
+                                { value: 1, label: "Strongly Disagree (1)" },
+                                { value: 0, label: "Not applicable" },
+                              ].map((option) => (
+                                <button
+                                  key={option.value}
+                                  className={`custom-button ${
+                                    formData[question.label] === option.value
+                                      ? "selected"
+                                      : ""
+                                  }`}
+                                  onClick={() =>
+                                    handleSelect(question.label, option.value)
+                                  }
+                                >
+                                  {option.label}
+                                </button>
+                              ))}
+                            </div>
+                          </td>
+                        </tr>
+                        <tr className="SQDC">
+                          <td className="SQDQ">
+                            {question.label} - {question.questions_text}
+                          </td>
+                          {[5, 4, 3, 2, 1, 0].map((value) => (
+                            <td key={value}>
+                              <Form.Check
+                                inline
+                                label=""
+                                name={question.label}
+                                type="radio"
+                                id={`${question.label}-${value}`}
+                                className="custom-radio"
+                                value={value}
+                                onChange={(e) =>
+                                  handleSelect(
+                                    question.label,
+                                    Number(e.target.value)
+                                  )
+                                }
+                                checked={formData[question.label] === value}
+                              />
+                            </td>
+                          ))}
+                        </tr>
+                      </React.Fragment>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
 
             <div
