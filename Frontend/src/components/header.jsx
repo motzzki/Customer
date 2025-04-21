@@ -5,6 +5,7 @@ import { Tooltip, OverlayTrigger } from "react-bootstrap";
 import DepedLogo from "../assets/Images/depedlogo.png";
 import { IoIosLogIn } from "react-icons/io";
 import "../style/Header.css";
+import moment from 'moment';
 
 const header = () => {
   const renderTooltip = (props) => (
@@ -43,7 +44,7 @@ const header = () => {
           <div className="col-lg-9 col-sm-12">
             <p className="sdo mt-3">
               <b>SDO Cabuyao</b> Client Satisfaction Measurement (CSM){" "}
-              {new Date().getFullYear()}
+              {moment().format('M/D/YYYY')}
             </p>
           </div>
         </div>

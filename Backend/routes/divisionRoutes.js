@@ -19,10 +19,10 @@ const router = express.Router();
 
 router.post("/add-division", verifyToken, addDivision);
 router.put("/updateDivision", verifyToken, updateDivision);
-router.get("/get-divisions", verifyToken, getDivisions);
-router.get("/get-services", verifyToken, getServices);
-router.get("/get-sub-division", verifyToken, getSubDivision);
-router.get("/get-feedback/:division_id", verifyToken, getFeedbackByDivision);
+router.get("/get-divisions", getDivisions);
+router.get("/get-services", getServices);
+router.get("/get-sub-division", getSubDivision);
+router.get("/get-feedback/:division_id", getFeedbackByDivision);
 router.get(
   "/services-and-subdivisions/:division_id",
   verifyToken,
