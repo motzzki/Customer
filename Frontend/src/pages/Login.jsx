@@ -96,7 +96,6 @@ const Login = () => {
               zIndex: 10,
               cursor: "pointer",
             }}
-            onClick={() => console.log("Logout clicked")}
           >
             <CgLogOut
               style={{

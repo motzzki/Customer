@@ -11,14 +11,16 @@ import pool from "./db.js";
 
 config();
 
-// Get current file's directory path
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);  // Dynamically resolve directory
+const __dirname = path.dirname(__filename);
+
+const depedMainPath = path.resolve(__dirname, '..');
+const staticFilesPath = path.join(depedMainPath, 'Frontend', 'dist');
+console.log("Static files path:", staticFilesPath);
 
 const app = express();
 const port = process.env.PORT || 5000;
 
-// Middlewares
 app.use(cors({ 
   credentials: true, 
   methods: 'GET,POST,PUT,DELETE', 
@@ -31,15 +33,17 @@ app.use(cookieParser());
 app.use("/api/users", userRoutes);
 app.use("/api/divisions", divisionRoutes);
 
-// Serve static files from React build (you already set __dirname dynamically)
-app.use(express.static(path.join(__dirname, "Frontend", "dist")));
+// Serve static files from dist directory (including assets)
+app.use(express.static(staticFilesPath));
 
-// Handle all other routes by sending index.html (for React app)
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "Frontend", "dist", "index.html"));
+// This ensures asset paths are correctly resolved in the HTML
+app.use('/assets', express.static(path.join(staticFilesPath, 'assets')));
+
+// Handle SPA fallback
+app.get('*', (req, res) => {
+  res.sendFile(path.join(staticFilesPath, 'index.html'));
 });
 
-// Test DB connection
 (async () => {
   try {
     const [rows] = await pool.query("SELECT 1");
@@ -49,7 +53,6 @@ app.get("*", (req, res) => {
   }
 })();
 
-// Start server, listen on all IP addresses (0.0.0.0)
 app.listen(port, '0.0.0.0', () => {
   console.log(`Server is running on http://localhost:${port}`);
 });

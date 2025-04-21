@@ -12,9 +12,10 @@ export default defineConfig({
       ),
     },
   },
-  // server: {
-  //   proxy: {
-  //     '/api': 'http://localhost:5000'
-  //   }
-  // }
+  build: {
+    outDir: '../Frontend/dist',
+    assetsDir: 'assets',
+  
+  }
+  
 });
