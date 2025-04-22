@@ -26,7 +26,7 @@ function clientInformation() {
 
     userData.age = Number(age);
     userData.sex = sex;
-    userData.customerType = Number(customerType);
+    userData.customerType = customerType;
 
     sessionStorage.setItem("userData", JSON.stringify(userData));
 
@@ -60,7 +60,7 @@ function clientInformation() {
   };
 
   const handleCustomerTypeChange = (event) => {
-    const value = Number(event.target.value);
+    const value = event.target.value;
     setCustomerType(value);
     // sessionStorage.setItem("customerType", value);
   };
@@ -137,8 +137,8 @@ function clientInformation() {
                   label="Business (private school, corporations, etc.)"
                   name="customerType"
                   id="business"
-                  value="1"
-                  checked={customerType === 1}
+                  value="Business"
+                  checked={customerType === "Business"}
                   onChange={handleCustomerTypeChange}
                 />
                 <Form.Check
@@ -147,8 +147,8 @@ function clientInformation() {
                   label="Citizen (general public, learners, parents, former DepEd employees, researchers, NGOs etc.)"
                   name="customerType"
                   id="citizen"
-                  value="2"
-                  checked={customerType === 2}
+                  value="Citizen"
+                  checked={customerType === "Citizen"}
                   onChange={handleCustomerTypeChange}
                 />
                 <Form.Check
@@ -157,8 +157,8 @@ function clientInformation() {
                   label="Government (current DepEd employees or employees of other government agencies & LGUs)"
                   name="customerType"
                   id="government"
-                  value="3"
-                  checked={customerType === 3}
+                  value="Government"
+                  checked={customerType === "Government"}
                   onChange={handleCustomerTypeChange}
                 />
               </div>

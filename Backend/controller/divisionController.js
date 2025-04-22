@@ -108,7 +108,7 @@ export const getSubDivision = async (req, res) => {
 
 //   try {
 //     const [feedback] = await pool.execute(
-//       `SELECT 
+//       `SELECT
 //         c.age,
 //         c.gender,
 //         c.customer_type,
@@ -340,7 +340,7 @@ export const getFeedBackData = async (req, res) => {
       fk_subdivision,
       fk_subdivision,
       fk_service,
-      customer_type
+      customer_type,
     ]);
 
     let totalSqd = {
@@ -385,7 +385,6 @@ export const getQuestionnaire = async (req, res) => {
   }
 };
 
-
 export const getFeedbackByDivision = async (req, res) => {
   const { division_id } = req.params;
   const { customer_type, service, start_date, end_date } = req.query;
@@ -420,17 +419,18 @@ export const getFeedbackByDivision = async (req, res) => {
     const params = [division_id];
 
     if (customer_type) {
-      baseQuery += ' AND c.customer_type = ?';
+      baseQuery += " AND c.customer_type = ?";
       params.push(customer_type);
     }
 
     if (service) {
-      baseQuery += ' AND f.service = ?';
+      baseQuery += " AND f.service = ?";
       params.push(service);
     }
 
     if (start_date && end_date) {
-      baseQuery += ' AND DATE(f.created_at) BETWEEN ? AND ?';
+      baseQuery +=
+        " AND DATE(f.created_at) >= DATE(?) AND DATE(f.created_at) <= DATE(?)";
       params.push(start_date, end_date);
     }
 
@@ -441,18 +441,7 @@ export const getFeedbackByDivision = async (req, res) => {
 
     const [feedback] = await pool.execute(baseQuery, params);
 
-    const customerTypeMap = {
-      1: "Business",
-      2: "Citizen",
-      3: "Government"
-    };
-
-    const mappedFeedback = feedback.map((item) => ({
-      ...item,
-      customerType: customerTypeMap[item.customer_type] || "Unknown"
-    }));
-
-    res.json(mappedFeedback);
+    res.json(feedback);
   } catch (error) {
     console.error("Error getting feedback by division:", error.message);
     res.status(500).json({ message: "Server error" });

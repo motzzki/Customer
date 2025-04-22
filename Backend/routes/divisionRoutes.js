@@ -29,7 +29,7 @@ router.get(
   getServicesAndSubdivisions
 );
 
-router.get("/feedback-data", verifyToken, getFeedBackData);
+router.get("/feedback-data", getFeedBackData);
 router.post("/insert-feedback", insertFeedback);
 router.get("/get-questions", getQuestionnaire);
 

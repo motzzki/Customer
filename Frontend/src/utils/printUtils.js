@@ -1,33 +1,31 @@
 import headerLogo from "../assets/Images/image.png";
 
-export const handlePrint = (dataArray) => {
+export const handlePrint = (dataArray, questions) => {
   const { summary, details } = dataArray;
+  console.log("handlePrint called with:", { dataArray, questions });
 
+  const validQuestions = Array.isArray(questions) ? questions : [];
 
   const generateTableRows = () => {
-    const sqdLabels = [
-      "SQD1 - Responsive",
-      "SQD2 - Reliability",
-      "SQD3 - Access and Facilities",
-      "SQD4 - Communication",
-      "SQD5 - Costs",
-      "SQD6 - Integrity",
-      "SQD7 - Assurance",
-      "SQD8 - Outcome",
-    ];
-
-    return sqdLabels
-      .map((label, index) => {
-        const sqdNum = index + 1;
-        const totalSqdValue = Number(summary[`total_sqd${sqdNum}`]) || 0;
-
-        return `
+    if (validQuestions.length === 0) {
+      return `
         <tr>
-          <td>${label}</td>
-          <td><b>${totalSqdValue}</b></td>
-          <td><b>${totalSqdValue}</b></td>
+          <td colspan="3">No question data available</td>
         </tr>
       `;
+    }
+
+    return validQuestions
+      .map((question, index) => {
+        const totalValue = Number(summary?.[`total_sqd${index + 1}`]) || 0;
+
+        return `
+          <tr>
+            <td>${question.question_text || question.text || ""}</td>
+            <td><b>${totalValue}</b></td>
+            <td><b>${totalValue}</b></td>
+          </tr>
+        `;
       })
       .join("");
   };
@@ -131,10 +129,6 @@ th, td {
 th:first-child, td:first-child {
   text-align: left;
 }
-
-
-
-
         .signature-section {
           margin-top: 2em;
           display: flex;

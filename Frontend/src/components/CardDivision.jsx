@@ -145,23 +145,23 @@ const CardDivision = () => {
                 )
             )}
 
-         {user?.role === "admin" && (
-            <div className="col-md-4 col-sm-6 mb-3 d-flex">
-              <Card
-                className="custom-card d-flex flex-column justify-content-center align-items-center text-center shadow bg-light"
-                style={{
-                  cursor: "pointer",
-                  height: "200px",
-                  width: "100%",
-                }}
-                onClick={handleShow}
-              >
-                <CardBody className="fs-6 d-flex align-items-center justify-content-center">
-                  <FaPlus size={50} className="text-white" />
-                </CardBody>
-              </Card>
-            </div>
-         )}
+            {user?.role === "admin" && (
+              <div className="col-md-4 col-sm-6 mb-3 d-flex">
+                <Card
+                  className="custom-card d-flex flex-column justify-content-center align-items-center text-center shadow bg-light"
+                  style={{
+                    cursor: "pointer",
+                    height: "200px",
+                    width: "100%",
+                  }}
+                  onClick={handleShow}
+                >
+                  <CardBody className="fs-6 d-flex align-items-center justify-content-center">
+                    <FaPlus size={50} className="text-white" />
+                  </CardBody>
+                </Card>
+              </div>
+            )}
           </>
         )}
       </div>

@@ -20,6 +20,8 @@ const DivisionPage = () => {
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
 
+  const [questions, setQuestions] = useState([]);
+
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
 
@@ -30,9 +32,32 @@ const DivisionPage = () => {
   const [selectedService, setSelectedService] = useState("");
 
   useEffect(() => {
+    const fetchQuestions = async () => {
+      try {
+        const response = await axios.get(
+          `${API_BASE_URL}/questions/get-questions`
+        );
+        console.log("Questions API response:", response.data);
+
+        if (response.status === 200 && Array.isArray(response.data)) {
+          setQuestions(response.data);
+        } else {
+          console.error("Unexpected questions data format:", response.data);
+          setQuestions([]);
+        }
+      } catch (error) {
+        console.error("Error fetching questions:", error);
+        setQuestions([]);
+      }
+    };
+
+    fetchQuestions();
+  }, []);
+
+  useEffect(() => {
     if (division_id) {
       fetchFeedbackByDivision(
-        division_id, 
+        division_id,
         filterCustomer,
         selectedService,
         startDate,
@@ -40,7 +65,6 @@ const DivisionPage = () => {
       );
     }
   }, [division_id, filterCustomer, selectedService, startDate, endDate]);
-
 
   useEffect(() => {
     const fetchData = async () => {
@@ -122,29 +146,29 @@ const DivisionPage = () => {
   const selectedServiceId = selectedService?.service_id || null;
   const selectedSubdivisionId = selectedSubdivision?.sub_division_id || null;
 
-  const formatNumber = (value) => {
-    const num = Number(value || 0);
-    return Number.isInteger(num) ? num.toString() : Math.trunc(num * 100) / 100;
-  };
-
   const handlePrintReport = async () => {
     try {
+      if (!Array.isArray(questions) || questions.length === 0) {
+        console.error("Questions data is not available or invalid:", questions);
+        // You might want to fetch questions here if they're not available
+        return;
+      }
+
       const feedbackData = await fetchFeedbackData(
         division_id,
         selectedSubdivisionId,
         selectedServiceId
       );
 
-      if (
-        !feedbackData ||
-        !feedbackData.details ||
-        feedbackData.details.length === 0
-      ) {
+      console.log("Feedback data:", feedbackData);
+      console.log("Questions available:", questions);
+
+      if (!feedbackData?.details?.length) {
         console.error("Error: No data available for printing.");
         return;
       }
 
-      // Prepare data for printing with both summary and details
+      // Prepare data for printing
       const reportData = {
         summary: feedbackData.summary || {},
         details: feedbackData.details.map((item) => ({
@@ -161,14 +185,6 @@ const DivisionPage = () => {
           ageBracket: item.age_bracket || "Not Specified",
           clientType: filterCustomer || "Not Specified",
           totalRespondents: item.total_respondents ?? "0",
-          sqd1: item.sqd1 ?? 0,
-          sqd2: item.sqd2 ?? 0,
-          sqd3: item.sqd3 ?? 0,
-          sqd4: item.sqd4 ?? 0,
-          sqd5: item.sqd5 ?? 0,
-          sqd6: item.sqd6 ?? 0,
-          sqd7: item.sqd7 ?? 0,
-          sqd8: item.sqd8 ?? 0,
         })),
       };
 
@@ -177,7 +193,8 @@ const DivisionPage = () => {
         return;
       }
 
-      handlePrint(reportData);
+      // Pass questions along with the report data
+      handlePrint(reportData, questions);
     } catch (error) {
       console.error("Error generating feedback report:", error);
     }
@@ -193,32 +210,23 @@ const DivisionPage = () => {
     try {
       const token = localStorage.getItem("token");
       const params = new URLSearchParams();
-  
-      const customerTypeMap = {
-        Business: 1,
-        Citizen: 2,
-        Government: 3,
-        1: "Business",
-        2: "Citizen",
-        3: "Government"
-      };
-  
-      if (filterCustomer) {
-        params.append("customer_type", customerTypeMap[filterCustomer]);
+
+      if (filterCustomer?.customer_type) {
+        params.append("customer_type", filterCustomer.customer_type);
       }
-  
+
       if (selectedService?.service_name) {
         params.append("service", selectedService.service_name);
       }
-  
+
       if (startDate) {
         params.append("start_date", startDate.toISOString().split("T")[0]);
       }
-  
+
       if (endDate) {
         params.append("end_date", endDate.toISOString().split("T")[0]);
       }
-  
+
       const response = await axios.get(
         `${API_BASE_URL}/divisions/get-feedback/${division_id}?${params.toString()}`,
         {
@@ -227,41 +235,36 @@ const DivisionPage = () => {
           },
         }
       );
-  
-      const mappedData = response.data.map((item) => ({
-        ...item,
-        customerType: customerTypeMap[item.customer_type] || "Unknown"
-      }));
-  
-      setData(mappedData);
+
+      setData(response.data);
     } catch (error) {
       console.error("Error fetching feedback:", error);
     }
   };
-  
+
   const filteredData = data.filter((item) => {
     const matchesCustomerType =
-      filterCustomer === "" || item.customerType === filterCustomer;
-  
+      filterCustomer === "" || item.customer_type === filterCustomer;
+
     const matchesSubdivision =
       !selectedSubdivision ||
       item.fk_subdivision === selectedSubdivision?.sub_division_id;
-  
+
     const matchesService =
       !selectedService ||
       item.fk_service === selectedService?.service_id ||
       item.service === selectedService?.service_name;
-  
+
     const itemDate = new Date(item.created_at);
     const matchesDate =
       (!startDate || itemDate >= startDate) &&
       (!endDate || itemDate <= endDate);
-  
+
     return (
       matchesCustomerType && matchesSubdivision && matchesService && matchesDate
     );
   });
-  
+
   // 4. Final filtered data
   const filteredByDate = filteredData;
 
@@ -364,9 +367,9 @@ const DivisionPage = () => {
             value={filterCustomer}
           >
             <option value="">Customer Type</option>
-            <option value="1" >Business</option>
-            <option value="2">Citizen</option>
-            <option value="3">Government</option>
+            <option value="Business">Business</option>
+            <option value="Citizen">Citizen</option>
+            <option value="Government">Government</option>
           </Form.Select>
 
           {subdivisions.length > 0 && (
@@ -419,9 +422,9 @@ const DivisionPage = () => {
               onChange={(date) => setStartDate(date)}
               placeholderText="Start Date"
               className="form-control"
-              dateFormat="MM/yyyy"
-              showMonthYearPicker
-              showFullMonthYearPicker
+              dateFormat="yyyy-MM-dd"
+              // showMonthYearPicker
+              // showFullMonthYearPicker
             />
             <span className="text-muted">to</span>
             <DatePicker
@@ -429,10 +432,10 @@ const DivisionPage = () => {
               onChange={(date) => setEndDate(date)}
               placeholderText="End Date"
               className="form-control"
-              dateFormat="MM/yyyy"
+              dateFormat="yyyy-MM-dd"
               minDate={startDate}
-              showMonthYearPicker
-              showFullMonthYearPicker
+              // showMonthYearPicker
+              // showFullMonthYearPicker
             />
           </div>
 
@@ -485,7 +488,7 @@ const DivisionPage = () => {
                 <tr key={index} className="align-middle">
                   <td className="text-center">{item.age}</td>
                   <td className="text-center">{item.gender.toUpperCase()}</td>
-                  <td className="text-center">{item.customerType}</td>
+                  <td className="text-center">{item.customer_type}</td>
                   {hasSubDivision && (
                     <td className="text-center">{item.sub_division_name}</td>
                   )}
