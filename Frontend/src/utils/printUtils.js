@@ -3,6 +3,7 @@ import headerLogo from "../assets/Images/image.png";
 export const handlePrint = (dataArray) => {
   const { summary, details } = dataArray;
 
+
   const generateTableRows = () => {
     const sqdLabels = [
       "SQD1 - Responsive",

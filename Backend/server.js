@@ -21,11 +21,12 @@ console.log("Static files path:", staticFilesPath);
 const app = express();
 const port = process.env.PORT || 5000;
 
-app.use(cors({ 
-  credentials: true, 
-  methods: 'GET,POST,PUT,DELETE', 
-  origin: "http://csm.sdocabuyao.com" 
+app.use(cors({
+  credentials: true,
+  methods: 'GET,POST,PUT,DELETE',
+  origin: ["https://csm.sdocabuyao.com", "http://localhost:5173"]
 }));
+
 app.use(express.json());
 app.use(cookieParser());
 

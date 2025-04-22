@@ -44,7 +44,7 @@ const header = () => {
           <div className="col-lg-9 col-sm-12">
             <p className="sdo mt-3">
               <b>SDO Cabuyao</b> Client Satisfaction Measurement (CSM){" "}
-              {moment().format('M/D/YYYY')}
+              {moment().format('YYYY')}
             </p>
           </div>
         </div>

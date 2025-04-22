@@ -31,9 +31,16 @@ const DivisionPage = () => {
 
   useEffect(() => {
     if (division_id) {
-      fetchFeedbackByDivision(division_id);
+      fetchFeedbackByDivision(
+        division_id, 
+        filterCustomer,
+        selectedService,
+        startDate,
+        endDate
+      );
     }
-  }, [division_id]);
+  }, [division_id, filterCustomer, selectedService, startDate, endDate]);
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -176,59 +183,86 @@ const DivisionPage = () => {
     }
   };
 
-  const fetchFeedbackByDivision = async (division_id) => {
+  const fetchFeedbackByDivision = async (
+    division_id,
+    filterCustomer,
+    selectedService,
+    startDate,
+    endDate
+  ) => {
     try {
       const token = localStorage.getItem("token");
+      const params = new URLSearchParams();
+  
+      const customerTypeMap = {
+        Business: 1,
+        Citizen: 2,
+        Government: 3,
+        1: "Business",
+        2: "Citizen",
+        3: "Government"
+      };
+  
+      if (filterCustomer) {
+        params.append("customer_type", customerTypeMap[filterCustomer]);
+      }
+  
+      if (selectedService?.service_name) {
+        params.append("service", selectedService.service_name);
+      }
+  
+      if (startDate) {
+        params.append("start_date", startDate.toISOString().split("T")[0]);
+      }
+  
+      if (endDate) {
+        params.append("end_date", endDate.toISOString().split("T")[0]);
+      }
+  
       const response = await axios.get(
-        `${API_BASE_URL}/divisions/get-feedback/${division_id}`,
+        `${API_BASE_URL}/divisions/get-feedback/${division_id}?${params.toString()}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }
       );
-
+  
       const mappedData = response.data.map((item) => ({
         ...item,
-        customerType:
-          item.customer_type === 1
-            ? "Business"
-            : item.customer_type === 2
-            ? "Government"
-            : item.customer_type === 3
-            ? "Citizen"
-            : "Unknown",
+        customerType: customerTypeMap[item.customer_type] || "Unknown"
       }));
-
+  
       setData(mappedData);
     } catch (error) {
       console.error("Error fetching feedback:", error);
     }
   };
-
+  
   const filteredData = data.filter((item) => {
     const matchesCustomerType =
       filterCustomer === "" || item.customerType === filterCustomer;
-
+  
     const matchesSubdivision =
       !selectedSubdivision ||
       item.fk_subdivision === selectedSubdivision?.sub_division_id;
-
+  
     const matchesService =
       !selectedService ||
       item.fk_service === selectedService?.service_id ||
       item.service === selectedService?.service_name;
-
+  
     const itemDate = new Date(item.created_at);
     const matchesDate =
       (!startDate || itemDate >= startDate) &&
       (!endDate || itemDate <= endDate);
-
+  
     return (
       matchesCustomerType && matchesSubdivision && matchesService && matchesDate
     );
   });
-
+  
+  // 4. Final filtered data
   const filteredByDate = filteredData;
 
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -272,16 +306,17 @@ const DivisionPage = () => {
       );
     }
 
-    // console.log("Selected Service ID:", selectedServiceId);
-    // console.log("Selected Subdivision ID:", selectedSubdivisionId);
+    console.log("Selected Service ID:", selectedServiceId);
+    console.log("Selected Subdivision ID:", selectedSubdivisionId);
 
-    // console.log(
-    //   "Selected Subdivision ID:",
-    //   selectedSubdivision?.sub_division_id
-    // );
-    // console.log("Selected Service ID:", selectedService?.service_id);
+    console.log(
+      "Selected Subdivision ID:",
+      selectedSubdivision?.sub_division_id
+    );
+    console.log("Selected Service ID:", selectedService?.service_id);
 
-    // console.log("Filtered Data:", filteredData);
+    console.log("Filtered Data:", filteredData);
+    console.log("Customer:", filterCustomer);
 
     return (
       <Pagination>
@@ -329,9 +364,9 @@ const DivisionPage = () => {
             value={filterCustomer}
           >
             <option value="">Customer Type</option>
-            <option value="Business">Business</option>
-            <option value="Citizen">Citizen</option>
-            <option value="Government">Government</option>
+            <option value="1" >Business</option>
+            <option value="2">Citizen</option>
+            <option value="3">Government</option>
           </Form.Select>
 
           {subdivisions.length > 0 && (
@@ -450,7 +485,7 @@ const DivisionPage = () => {
                 <tr key={index} className="align-middle">
                   <td className="text-center">{item.age}</td>
                   <td className="text-center">{item.gender.toUpperCase()}</td>
-                  <td className="text-center">{item.customer_type}</td>
+                  <td className="text-center">{item.customerType}</td>
                   {hasSubDivision && (
                     <td className="text-center">{item.sub_division_name}</td>
                   )}
