@@ -10,7 +10,6 @@ import {
   insertFeedback,
   getServicesAndSubdivisions,
   getFeedBackData,
-  getQuestionnaire,
 } from "../controller/divisionController.js";
 
 import { verifyToken } from "../middleware/auth.js";
@@ -25,12 +24,10 @@ router.get("/get-sub-division", getSubDivision);
 router.get("/get-feedback/:division_id", getFeedbackByDivision);
 router.get(
   "/services-and-subdivisions/:division_id",
-  verifyToken,
   getServicesAndSubdivisions
 );
 
 router.get("/feedback-data", getFeedBackData);
 router.post("/insert-feedback", insertFeedback);
-router.get("/get-questions", getQuestionnaire);
 
 export default router;

@@ -21,7 +21,13 @@ export const handlePrint = (dataArray, questions) => {
 
         return `
           <tr>
-            <td>${question.question_text || question.text || ""}</td>
+            <td>${question.questions_text || question.text || ""}</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
             <td><b>${totalValue}</b></td>
             <td><b>${totalValue}</b></td>
           </tr>
@@ -66,12 +72,12 @@ export const handlePrint = (dataArray, questions) => {
       <title>Customer Feedback Report</title>
       <style>
         @page {
-          size: letter;
+          size: legal;
           margin: 10mm;
         }
 
         body {
-          font-family: Arial, sans-serif;
+          font-family: "Bookman Old Style", "Georgia", serif;
           font-size: 1em;
           margin: 0;
           padding: 0;
@@ -103,32 +109,32 @@ export const handlePrint = (dataArray, questions) => {
         }
 
        table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 1em;
-  font-size: 1em; /* Slightly larger font for better readability */
-  table-layout: fixed; /* Ensures equal column distribution */
-}
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 1em;
+          font-size: 1em; /* Slightly larger font for better readability */
+          table-layout: fixed; /* Ensures equal column distribution */
+        }
 
-th, td {
-  border: 1px solid black;
-  padding: 1em; /* Increased padding for better spacing */
-  text-align: center;
-  word-wrap: break-word;
-  height: 3em; /* Ensures consistent row height */
-}
+        th, td {
+          border: 1px solid black;
+          padding: 10px; 
+          text-align: center;
+          word-wrap: break-word;
+          height: 3em; /* Ensures consistent row height */
+        }
 
-th {
-  background-color: #f2f2f2;
-}
+        th {
+          background-color: #f2f2f2;
+        }
 
-th, td {
-  width: 33.33%; /* Distributes columns evenly */
-}
+        th, td {
+          width: 33.33%; /* Distributes columns evenly */
+        }
 
-th:first-child, td:first-child {
-  text-align: left;
-}
+        th:first-child, td:first-child {
+          text-align: left;
+        }
         .signature-section {
           margin-top: 2em;
           display: flex;
@@ -189,16 +195,24 @@ th:first-child, td:first-child {
         <table>
           <thead>
             <tr>
-              <th>Survey</th>
-              <th>Total Rated Score</th>
-              <th>Total Ave. Score</th>
+              <th style="width: 25%; text-align: center">Survey</th>
+              <th style="width: 5%;">5</th>
+              <th style="width: 5%;">4</th>
+              <th style="width: 5%;">3</th>
+              <th style="width: 5%;">2</th>
+              <th style="width: 5%;">1</th>
+              <th style="width: 20%;">Total Number of Respondents</th>
+              <th style="width: 12.5%;">Total Rated Score</th>
+              <th style="width: 12.5%;">Total Ave. Score</th>
             </tr>
           </thead>
+
           <tbody>
              ${generateTableRows()}
              <tr>
                <td colspan="2"><b>Total Number of Respondents</b></td>
-               <td colspan="1"><b>${details.reduce(
+               <td colspan="1"><b>
+               ${details.reduce(
                  (acc, item) =>
                    acc +
                    (Number(item.maleCount || item.total_males) || 0) +

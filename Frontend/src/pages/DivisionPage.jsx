@@ -163,10 +163,10 @@ const DivisionPage = () => {
       console.log("Feedback data:", feedbackData);
       console.log("Questions available:", questions);
 
-      if (!feedbackData?.details?.length) {
-        console.error("Error: No data available for printing.");
-        return;
-      }
+      // if (!feedbackData?.details?.length) {
+      //   console.error("Error: No data available for printing.");
+      //   return;
+      // }
 
       // Prepare data for printing
       const reportData = {
@@ -188,10 +188,10 @@ const DivisionPage = () => {
         })),
       };
 
-      if (reportData.details.length === 0) {
-        console.error("Error: No valid report data.");
-        return;
-      }
+      // if (reportData.details.length === 0) {
+      //   console.error("Error: No valid report data.");
+      //   return;
+      // }
 
       // Pass questions along with the report data
       handlePrint(reportData, questions);

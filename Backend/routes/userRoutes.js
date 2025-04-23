@@ -12,6 +12,6 @@ const router = express.Router();
 router.post("/register", register);
 router.post("/login", login);
 router.post("/change-password", verifyToken, changePassword);
-router.post("/new-user", verifyToken, registerSubUser); // Assuming this is for creating a new user
+router.post("/new-user", verifyToken, registerSubUser); 
 
 export default router;

@@ -375,15 +375,7 @@ export const getFeedBackData = async (req, res) => {
   }
 };
 
-export const getQuestionnaire = async (req, res) => {
-  try {
-    const [questionnaires] = await pool.execute("SELECT * FROM questions");
-    res.status(200).json(questionnaires);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
-  }
-};
+
 
 export const getFeedbackByDivision = async (req, res) => {
   const { division_id } = req.params;
