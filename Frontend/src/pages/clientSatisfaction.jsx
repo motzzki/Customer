@@ -20,8 +20,9 @@ const ClientSatisfaction = () => {
   const fetchQuestions = async () => {
     try {
       const response = await axios.get(
-        `${API_BASE_URL}/divisions/get-questions`
+        `${API_BASE_URL}/questions/get-questions`
       );
+      console.log(response.data);
       setQuestions(response.data);
     } catch (error) {
       console.error("Error fetching questions:", error);

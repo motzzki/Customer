@@ -375,8 +375,6 @@ export const getFeedBackData = async (req, res) => {
   }
 };
 
-
-
 export const getFeedbackByDivision = async (req, res) => {
   const { division_id } = req.params;
   const { customer_type, service, start_date, end_date } = req.query;
