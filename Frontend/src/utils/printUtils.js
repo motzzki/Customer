@@ -3,11 +3,16 @@ import depedfooter from "../assets/Images/depedfooter.jpg";
 import bagongpilipinas from "../assets/Images/bagongpilipinas.jpg";
 import depedsdo from "../assets/Images/depedsdo.jpg";
 
-export const handlePrint = (dataArray, questions) => {
+export const handlePrint = (dataArray, questions, dname, servname, periodStart, periodEnd, clientType) => {
   const { summary, details } = dataArray;
   const depedfooterimg = depedfooter;
   const bagongpilipinasimg = bagongpilipinas;
   const depedsdoimg = depedsdo;
+  const divname = dname;
+  const sername = servname;
+  const pStart = periodStart;
+  const pEnd = periodEnd;
+  const clType = clientType;
 
   console.log("handlePrint called with:", { dataArray, questions });
 
@@ -80,10 +85,10 @@ export const handlePrint = (dataArray, questions) => {
   const firstItem = details[0] || {};
   const {
     divisionName,
-    periodStart,
-    periodEnd,
+    // periodStart,
+    // periodEnd,
     purposeTransaction,
-    clientType,
+    // clientType,
     image = headerLogo,
   } = firstItem;
 
@@ -286,16 +291,16 @@ export const handlePrint = (dataArray, questions) => {
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <div>
               <b>Functional Division/Section/Unit:</b>
-              <span class="divisionName">${divisionName}</span>
+              <span class="divisionName">${divname}</span>
             </div>
             <div>
-               <b>PERIOD:<span class="serviceName"> ${periodStart}-${periodEnd}</b></span>
+               <b>PERIOD:<span class="serviceName"> ${pStart}-${pEnd}</b></span>
             </div>
           </div>
 
           <div>
             <b>Purpose of Transaction:</b>
-            <span class="serviceName">${purposeTransaction}</span>
+            <span class="serviceName">${sername}</span>
           </div>
         </div>
 
@@ -304,7 +309,7 @@ export const handlePrint = (dataArray, questions) => {
         </div>
         <div>
           <b>Client Type:</b>
-          <span class="serviceName">${clientType}</span>
+          <span class="serviceName">${clType}</span>
         </div>
 
         <table>

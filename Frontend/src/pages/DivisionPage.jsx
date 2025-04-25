@@ -159,6 +159,11 @@ const DivisionPage = () => {
         selectedSubdivisionId,
         selectedServiceId
       );
+      const dname = division_name;
+      const servname = selectedService?.service_name;
+      const periodStart = moment(startDate).format("MMMM");
+      const periodEnd = moment(endDate).format("MMMM YYYY");
+      const clientType = filterCustomer;
 
       console.log("Feedback data:", feedbackData);
       console.log("Questions available:", questions);
@@ -194,7 +199,7 @@ const DivisionPage = () => {
       // }
 
       // Pass questions along with the report data
-      handlePrint(reportData, questions);
+      handlePrint(reportData, questions, dname, servname, periodStart, periodEnd, clientType);
     } catch (error) {
       console.error("Error generating feedback report:", error);
     }
