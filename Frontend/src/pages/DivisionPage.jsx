@@ -6,9 +6,10 @@ import { API_BASE_URL } from "../config";
 import axios from "axios";
 import moment from "moment";
 import DatePicker from "react-datepicker";
-import { handlePrint } from "../utils/printUtils";
+// import { handlePrint } from "../utils/printUtils";
 
 import "react-datepicker/dist/react-datepicker.css";
+import PrintModal from "../components/modal/printModal";
 
 const DivisionPage = () => {
   const [data, setData] = useState([]);
@@ -31,13 +32,18 @@ const DivisionPage = () => {
   const [selectedSubdivision, setSelectedSubdivision] = useState("");
   const [selectedService, setSelectedService] = useState("");
 
+  const [showNewPrintModal, setShowNewPrintModal] = useState(false);
+
+  const handleShowPrintModal = () => setShowNewPrintModal(true);
+  const handleClosePrintModal = () => setShowNewPrintModal(false);
+
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
         const response = await axios.get(
           `${API_BASE_URL}/questions/get-questions`
         );
-        console.log("Questions API response:", response.data);
+        // console.log("Questions API response:", response.data);
 
         if (response.status === 200 && Array.isArray(response.data)) {
           setQuestions(response.data);
@@ -146,64 +152,6 @@ const DivisionPage = () => {
   const selectedServiceId = selectedService?.service_id || null;
   const selectedSubdivisionId = selectedSubdivision?.sub_division_id || null;
 
-  const handlePrintReport = async () => {
-    try {
-      if (!Array.isArray(questions) || questions.length === 0) {
-        console.error("Questions data is not available or invalid:", questions);
-        // You might want to fetch questions here if they're not available
-        return;
-      }
-
-      const feedbackData = await fetchFeedbackData(
-        division_id,
-        selectedSubdivisionId,
-        selectedServiceId
-      );
-      const dname = division_name;
-      const servname = selectedService?.service_name;
-      const periodStart = moment(startDate).format("MMMM");
-      const periodEnd = moment(endDate).format("MMMM YYYY");
-      const clientType = filterCustomer;
-
-      console.log("Feedback data:", feedbackData);
-      console.log("Questions available:", questions);
-
-      // if (!feedbackData?.details?.length) {
-      //   console.error("Error: No data available for printing.");
-      //   return;
-      // }
-
-      // Prepare data for printing
-      const reportData = {
-        summary: feedbackData.summary || {},
-        details: feedbackData.details.map((item) => ({
-          divisionName: division_name?.toUpperCase() || "Not Specified",
-          periodStart: startDate
-            ? moment(startDate).format("MMMM")
-            : "Not Specified",
-          periodEnd: endDate
-            ? moment(endDate).format("MMMM YYYY")
-            : "Not Specified",
-          purposeTransaction: selectedService?.service_name || "Not Specified",
-          maleCount: item.total_males ?? "0",
-          femaleCount: item.total_females ?? "0",
-          ageBracket: item.age_bracket || "Not Specified",
-          clientType: filterCustomer || "Not Specified",
-          totalRespondents: item.total_respondents ?? "0",
-        })),
-      };
-
-      // if (reportData.details.length === 0) {
-      //   console.error("Error: No valid report data.");
-      //   return;
-      // }
-
-      // Pass questions along with the report data
-      handlePrint(reportData, questions, dname, servname, periodStart, periodEnd, clientType);
-    } catch (error) {
-      console.error("Error generating feedback report:", error);
-    }
-  };
 
   const fetchFeedbackByDivision = async (
     division_id,
@@ -314,17 +262,17 @@ const DivisionPage = () => {
       );
     }
 
-    console.log("Selected Service ID:", selectedServiceId);
-    console.log("Selected Subdivision ID:", selectedSubdivisionId);
+    // console.log("Selected Service ID:", selectedServiceId);
+    // console.log("Selected Subdivision ID:", selectedSubdivisionId);
 
-    console.log(
-      "Selected Subdivision ID:",
-      selectedSubdivision?.sub_division_id
-    );
-    console.log("Selected Service ID:", selectedService?.service_id);
+    // console.log(
+    //   "Selected Subdivision ID:",
+    //   selectedSubdivision?.sub_division_id
+    // );
+    // console.log("Selected Service ID:", selectedService?.service_id);
 
-    console.log("Filtered Data:", filteredData);
-    console.log("Customer:", filterCustomer);
+    // console.log("Filtered Data:", filteredData);
+    // console.log("Customer:", filterCustomer);
 
     return (
       <Pagination>
@@ -449,7 +397,7 @@ const DivisionPage = () => {
           </Button>
         </div>
 
-        <Button variant="success" onClick={handlePrintReport}>
+        <Button variant="success" onClick={handleShowPrintModal}>
           Print
         </Button>
       </div>
@@ -541,6 +489,7 @@ const DivisionPage = () => {
           {renderPagination()}
         </div>
       </Card>
+      <PrintModal show={showNewPrintModal} handleClose={handleClosePrintModal} division_id={division_id} division_name={division_name} />
     </div>
   );
 };

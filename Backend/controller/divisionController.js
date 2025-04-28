@@ -437,3 +437,404 @@ export const getFeedbackByDivision = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+export const getCustomerStats = async (req, res) => {
+  // Get parameters from query string instead of body
+  const { 
+    fk_division, 
+    fk_service, 
+    fk_subdivision, 
+    customer_type,
+    startDate, 
+    endDate 
+  } = req.query;
+
+  if (!fk_division || !fk_service) {
+    return res.status(400).json({ 
+      message: "fk_division and fk_service are required" 
+    });
+  }
+
+  try {
+    const query = `
+      SELECT
+        SUM(CASE WHEN c.gender = 'Male' THEN 1 ELSE 0 END) AS total_male,
+        SUM(CASE WHEN c.gender = 'Female' THEN 1 ELSE 0 END) AS total_female,
+        COUNT(CASE WHEN c.age <= 19 THEN 1 END) AS total_age_19_lower,
+        COUNT(CASE WHEN c.age BETWEEN 20 AND 34 THEN 1 END) AS total_age_20_34,
+        COUNT(CASE WHEN c.age BETWEEN 35 AND 49 THEN 1 END) AS total_age_35_49,
+        COUNT(CASE WHEN c.age BETWEEN 50 AND 64 THEN 1 END) AS total_age_50_64,
+        COUNT(CASE WHEN c.age >= 65 THEN 1 END) AS total_age_65_higher
+      FROM
+        customer c
+      JOIN
+        feedback f ON c.customer_id = f.fk_customer
+      WHERE
+        f.fk_division = ? 
+        AND (f.fk_service = ? OR ? IS NULL) 
+        AND (f.fk_subdivision = ? OR f.fk_subdivision IS NULL)
+        AND (c.customer_type = ? OR ? IS NULL)
+        AND DATE(f.created_at) BETWEEN ? AND LAST_DAY(?)
+      GROUP BY
+        f.fk_division;
+    `;
+
+    const [results] = await pool.execute(query, [
+      fk_division, 
+      fk_service || null, 
+      fk_service || null, // Handle fk_service being null in SQL
+      fk_subdivision || null,
+      customer_type || null,
+      customer_type || null, // Handle customer_type being null in SQL
+      startDate, 
+      endDate || '9999-12-31' // Default to a far future date if endDate is not provided
+    ]);
+
+    res.json(results[0] || {});
+  } catch (err) {
+    console.error('Error executing query:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+export const getSurveyResults = async (req, res) => {
+  // Get parameters from query string instead of body
+  const { 
+    fk_division, 
+    fk_service, 
+    fk_subdivision, 
+    customer_type,
+    startDate, 
+    endDate 
+  } = req.query;
+
+  if (!fk_division || !fk_service) {
+    return res.status(400).json({ 
+      message: "fk_division and fk_service are required" 
+    });
+  }
+
+  try {
+    const query = `
+      WITH filtered_answers AS (
+          SELECT fa.*
+          FROM feedback_answers fa
+          JOIN feedback f ON f.feedback_id = fa.fk_feedback
+          JOIN customer c ON c.customer_id = f.fk_customer
+          WHERE
+              f.fk_division = ?
+              AND (f.fk_service = ? OR ? IS NULL)
+              AND (f.fk_subdivision = ? OR f.fk_subdivision IS NULL)
+              AND (c.customer_type = ? OR ? IS NULL)
+              AND DATE(f.created_at) BETWEEN ? AND LAST_DAY(?)
+      )
+
+      SELECT
+          -- SQD1 - Responsiveness
+          SUM(CASE WHEN fk_questions = 1 AND answer_value = 5 THEN 1 ELSE 0 END) AS SQD1_5,
+          SUM(CASE WHEN fk_questions = 1 AND answer_value = 4 THEN 1 ELSE 0 END) AS SQD1_4,
+          SUM(CASE WHEN fk_questions = 1 AND answer_value = 3 THEN 1 ELSE 0 END) AS SQD1_3,
+          SUM(CASE WHEN fk_questions = 1 AND answer_value = 2 THEN 1 ELSE 0 END) AS SQD1_2,
+          SUM(CASE WHEN fk_questions = 1 AND answer_value = 1 THEN 1 ELSE 0 END) AS SQD1_1,
+          SUM(CASE WHEN fk_questions = 1 AND answer_value = 0 THEN 1 ELSE 0 END) AS SQD1_0,
+          COUNT(DISTINCT CASE WHEN fk_questions = 1 THEN fk_feedback END) AS SQD1_total_respondents,
+          SUM(CASE WHEN fk_questions = 1 THEN answer_value ELSE 0 END) AS SQD1_total_score,
+          ROUND(AVG(CASE WHEN fk_questions = 1 THEN answer_value END), 2) AS SQD1_avg,
+
+          -- SQD2 - Reliability
+          SUM(CASE WHEN fk_questions = 2 AND answer_value = 5 THEN 1 ELSE 0 END) AS SQD2_5,
+          SUM(CASE WHEN fk_questions = 2 AND answer_value = 4 THEN 1 ELSE 0 END) AS SQD2_4,
+          SUM(CASE WHEN fk_questions = 2 AND answer_value = 3 THEN 1 ELSE 0 END) AS SQD2_3,
+          SUM(CASE WHEN fk_questions = 2 AND answer_value = 2 THEN 1 ELSE 0 END) AS SQD2_2,
+          SUM(CASE WHEN fk_questions = 2 AND answer_value = 1 THEN 1 ELSE 0 END) AS SQD2_1,
+          SUM(CASE WHEN fk_questions = 2 AND answer_value = 0 THEN 1 ELSE 0 END) AS SQD2_0,
+          COUNT(DISTINCT CASE WHEN fk_questions = 2 THEN fk_feedback END) AS SQD2_total_respondents,
+          SUM(CASE WHEN fk_questions = 2 THEN answer_value ELSE 0 END) AS SQD2_total_score,
+          ROUND(AVG(CASE WHEN fk_questions = 2 THEN answer_value END), 2) AS SQD2_avg,
+
+          -- SQD3 - Access and Facilities
+          SUM(CASE WHEN fk_questions = 3 AND answer_value = 5 THEN 1 ELSE 0 END) AS SQD3_5,
+          SUM(CASE WHEN fk_questions = 3 AND answer_value = 4 THEN 1 ELSE 0 END) AS SQD3_4,
+          SUM(CASE WHEN fk_questions = 3 AND answer_value = 3 THEN 1 ELSE 0 END) AS SQD3_3,
+          SUM(CASE WHEN fk_questions = 3 AND answer_value = 2 THEN 1 ELSE 0 END) AS SQD3_2,
+          SUM(CASE WHEN fk_questions = 3 AND answer_value = 1 THEN 1 ELSE 0 END) AS SQD3_1,
+          SUM(CASE WHEN fk_questions = 3 AND answer_value = 0 THEN 1 ELSE 0 END) AS SQD3_0,
+          COUNT(DISTINCT CASE WHEN fk_questions = 3 THEN fk_feedback END) AS SQD3_total_respondents,
+          SUM(CASE WHEN fk_questions = 3 THEN answer_value ELSE 0 END) AS SQD3_total_score,
+          ROUND(AVG(CASE WHEN fk_questions = 3 THEN answer_value END), 2) AS SQD3_avg,
+
+          -- SQD4 - Communication
+          SUM(CASE WHEN fk_questions = 4 AND answer_value = 5 THEN 1 ELSE 0 END) AS SQD4_5,
+          SUM(CASE WHEN fk_questions = 4 AND answer_value = 4 THEN 1 ELSE 0 END) AS SQD4_4,
+          SUM(CASE WHEN fk_questions = 4 AND answer_value = 3 THEN 1 ELSE 0 END) AS SQD4_3,
+          SUM(CASE WHEN fk_questions = 4 AND answer_value = 2 THEN 1 ELSE 0 END) AS SQD4_2,
+          SUM(CASE WHEN fk_questions = 4 AND answer_value = 1 THEN 1 ELSE 0 END) AS SQD4_1,
+          SUM(CASE WHEN fk_questions = 4 AND answer_value = 0 THEN 1 ELSE 0 END) AS SQD4_0,
+          COUNT(DISTINCT CASE WHEN fk_questions = 4 THEN fk_feedback END) AS SQD4_total_respondents,
+          SUM(CASE WHEN fk_questions = 4 THEN answer_value ELSE 0 END) AS SQD4_total_score,
+          ROUND(AVG(CASE WHEN fk_questions = 4 THEN answer_value END), 2) AS SQD4_avg,
+
+          -- SQD5 - Costs
+          SUM(CASE WHEN fk_questions = 5 AND answer_value = 5 THEN 1 ELSE 0 END) AS SQD5_5,
+          SUM(CASE WHEN fk_questions = 5 AND answer_value = 4 THEN 1 ELSE 0 END) AS SQD5_4,
+          SUM(CASE WHEN fk_questions = 5 AND answer_value = 3 THEN 1 ELSE 0 END) AS SQD5_3,
+          SUM(CASE WHEN fk_questions = 5 AND answer_value = 2 THEN 1 ELSE 0 END) AS SQD5_2,
+          SUM(CASE WHEN fk_questions = 5 AND answer_value = 1 THEN 1 ELSE 0 END) AS SQD5_1,
+          SUM(CASE WHEN fk_questions = 5 AND answer_value = 0 THEN 1 ELSE 0 END) AS SQD5_0,
+          COUNT(DISTINCT CASE WHEN fk_questions = 5 THEN fk_feedback END) AS SQD5_total_respondents,
+          SUM(CASE WHEN fk_questions = 5 THEN answer_value ELSE 0 END) AS SQD5_total_score,
+          ROUND(AVG(CASE WHEN fk_questions = 5 THEN answer_value END), 2) AS SQD5_avg,
+
+          -- SQD6 - Integrity
+          SUM(CASE WHEN fk_questions = 6 AND answer_value = 5 THEN 1 ELSE 0 END) AS SQD6_5,
+          SUM(CASE WHEN fk_questions = 6 AND answer_value = 4 THEN 1 ELSE 0 END) AS SQD6_4,
+          SUM(CASE WHEN fk_questions = 6 AND answer_value = 3 THEN 1 ELSE 0 END) AS SQD6_3,
+          SUM(CASE WHEN fk_questions = 6 AND answer_value = 2 THEN 1 ELSE 0 END) AS SQD6_2,
+          SUM(CASE WHEN fk_questions = 6 AND answer_value = 1 THEN 1 ELSE 0 END) AS SQD6_1,
+          SUM(CASE WHEN fk_questions = 6 AND answer_value = 0 THEN 1 ELSE 0 END) AS SQD6_0,
+          COUNT(DISTINCT CASE WHEN fk_questions = 6 THEN fk_feedback END) AS SQD6_total_respondents,
+          SUM(CASE WHEN fk_questions = 6 THEN answer_value ELSE 0 END) AS SQD6_total_score,
+          ROUND(AVG(CASE WHEN fk_questions = 6 THEN answer_value END), 2) AS SQD6_avg,
+
+          -- SQD7 - Assurance
+          SUM(CASE WHEN fk_questions = 7 AND answer_value = 5 THEN 1 ELSE 0 END) AS SQD7_5,
+          SUM(CASE WHEN fk_questions = 7 AND answer_value = 4 THEN 1 ELSE 0 END) AS SQD7_4,
+          SUM(CASE WHEN fk_questions = 7 AND answer_value = 3 THEN 1 ELSE 0 END) AS SQD7_3,
+          SUM(CASE WHEN fk_questions = 7 AND answer_value = 2 THEN 1 ELSE 0 END) AS SQD7_2,
+          SUM(CASE WHEN fk_questions = 7 AND answer_value = 1 THEN 1 ELSE 0 END) AS SQD7_1,
+          SUM(CASE WHEN fk_questions = 7 AND answer_value = 0 THEN 1 ELSE 0 END) AS SQD7_0,
+          COUNT(DISTINCT CASE WHEN fk_questions = 7 THEN fk_feedback END) AS SQD7_total_respondents,
+          SUM(CASE WHEN fk_questions = 7 THEN answer_value ELSE 0 END) AS SQD7_total_score,
+          ROUND(AVG(CASE WHEN fk_questions = 7 THEN answer_value END), 2) AS SQD7_avg,
+
+          -- SQD8 - Outcome
+          SUM(CASE WHEN fk_questions = 8 AND answer_value = 5 THEN 1 ELSE 0 END) AS SQD8_5,
+          SUM(CASE WHEN fk_questions = 8 AND answer_value = 4 THEN 1 ELSE 0 END) AS SQD8_4,
+          SUM(CASE WHEN fk_questions = 8 AND answer_value = 3 THEN 1 ELSE 0 END) AS SQD8_3,
+          SUM(CASE WHEN fk_questions = 8 AND answer_value = 2 THEN 1 ELSE 0 END) AS SQD8_2,
+          SUM(CASE WHEN fk_questions = 8 AND answer_value = 1 THEN 1 ELSE 0 END) AS SQD8_1,
+          SUM(CASE WHEN fk_questions = 8 AND answer_value = 0 THEN 1 ELSE 0 END) AS SQD8_0,
+          COUNT(DISTINCT CASE WHEN fk_questions = 8 THEN fk_feedback END) AS SQD8_total_respondents,
+          SUM(CASE WHEN fk_questions = 8 THEN answer_value ELSE 0 END) AS SQD8_total_score,
+          ROUND(AVG(CASE WHEN fk_questions = 8 THEN answer_value END), 2) AS SQD8_avg,
+
+          -- Overall Average Score
+          ROUND(AVG(answer_value), 2) AS overall_avg,
+
+          CASE 
+              WHEN ROUND(AVG(answer_value), 1) BETWEEN 4.5 AND 5.0 THEN 'Outstanding'
+              WHEN ROUND(AVG(answer_value), 1) BETWEEN 3.5 AND 4.49 THEN 'Very Satisfactory'
+              WHEN ROUND(AVG(answer_value), 1) BETWEEN 2.5 AND 3.49 THEN 'Satisfactory'
+              WHEN ROUND(AVG(answer_value), 1) BETWEEN 1.5 AND 2.49 THEN 'Unsatisfactory'
+              ELSE 'Poor'
+          END AS descriptive_rating
+
+      FROM filtered_answers;
+
+    `;
+
+    const [results] = await pool.execute(query, [
+      fk_division, 
+      fk_service || null, 
+      fk_service || null, // Handle fk_service being null in SQL
+      fk_subdivision || null,
+      customer_type || null,
+      customer_type || null, // Handle customer_type being null in SQL
+      startDate, 
+      endDate // Default to a far future date if endDate is not provided
+    ]);
+
+    res.json(results[0] || {});
+  } catch (err) {
+    console.error('Error executing query:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+export const getCustomerStatsMonth = async (req, res) => {
+  // Get parameters from query string instead of body
+  const { 
+    fk_division, 
+    fk_subdivision, 
+    month, 
+    year 
+  } = req.query;
+
+  try {
+    const query = `
+      SELECT
+        SUM(CASE WHEN c.gender = 'Male' THEN 1 ELSE 0 END) AS total_male,
+        SUM(CASE WHEN c.gender = 'Female' THEN 1 ELSE 0 END) AS total_female,
+        COUNT(CASE WHEN c.age <= 19 THEN 1 END) AS total_age_19_lower,
+        COUNT(CASE WHEN c.age BETWEEN 20 AND 34 THEN 1 END) AS total_age_20_34,
+        COUNT(CASE WHEN c.age BETWEEN 35 AND 49 THEN 1 END) AS total_age_35_49,
+        COUNT(CASE WHEN c.age BETWEEN 50 AND 64 THEN 1 END) AS total_age_50_64,
+        COUNT(CASE WHEN c.age >= 65 THEN 1 END) AS total_age_65_higher,
+        COUNT(CASE WHEN c.customer_type = 'Business' THEN 1 END) AS total_business,
+        COUNT(CASE WHEN c.customer_type = 'Citizen' THEN 1 END) AS total_citizen,
+        COUNT(CASE WHEN c.customer_type = 'Government' THEN 1 END) AS total_government
+      FROM
+        customer c
+      JOIN
+        feedback f ON c.customer_id = f.fk_customer
+      WHERE
+        f.fk_division = ?
+        AND (f.fk_subdivision = ? OR f.fk_subdivision IS NULL)
+        AND MONTH(f.created_at) = ?
+        AND YEAR(f.created_at) = ?
+    `;
+
+    const [results] = await pool.execute(query, [
+      fk_division, 
+      fk_subdivision, 
+      month, 
+      year 
+    ]);
+
+    res.json(results[0] || {});
+  } catch (err) {
+    console.error('Error executing query:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+export const getSurveyResultsMonth = async (req, res) => {
+  // Get parameters from query string instead of body
+  const { 
+    fk_division, 
+    fk_subdivision, 
+    month, 
+    year 
+  } = req.query;
+
+  try {
+    const query = `
+      WITH filtered_answers AS (
+          SELECT fa.*
+          FROM feedback_answers fa
+          JOIN feedback f ON f.feedback_id = fa.fk_feedback
+          JOIN customer c ON c.customer_id = f.fk_customer
+          WHERE
+              f.fk_division = ? 
+              AND (f.fk_subdivision = ? OR f.fk_subdivision IS NULL)
+              AND MONTH(f.created_at) = ?  -- January (1)
+              AND YEAR(f.created_at) = ? -- Year 2025'
+      )
+
+      SELECT
+          -- SQD1 - Responsiveness
+          SUM(CASE WHEN fk_questions = 1 AND answer_value = 5 THEN 1 ELSE 0 END) AS SQD1_5,
+          SUM(CASE WHEN fk_questions = 1 AND answer_value = 4 THEN 1 ELSE 0 END) AS SQD1_4,
+          SUM(CASE WHEN fk_questions = 1 AND answer_value = 3 THEN 1 ELSE 0 END) AS SQD1_3,
+          SUM(CASE WHEN fk_questions = 1 AND answer_value = 2 THEN 1 ELSE 0 END) AS SQD1_2,
+          SUM(CASE WHEN fk_questions = 1 AND answer_value = 1 THEN 1 ELSE 0 END) AS SQD1_1,
+          SUM(CASE WHEN fk_questions = 1 AND answer_value = 0 THEN 1 ELSE 0 END) AS SQD1_0,
+          COUNT(DISTINCT CASE WHEN fk_questions = 1 THEN fk_feedback END) AS SQD1_total_respondents,
+          SUM(CASE WHEN fk_questions = 1 THEN answer_value ELSE 0 END) AS SQD1_total_score,
+          ROUND(AVG(CASE WHEN fk_questions = 1 THEN answer_value END), 2) AS SQD1_avg,
+
+          -- SQD2 - Reliability
+          SUM(CASE WHEN fk_questions = 2 AND answer_value = 5 THEN 1 ELSE 0 END) AS SQD2_5,
+          SUM(CASE WHEN fk_questions = 2 AND answer_value = 4 THEN 1 ELSE 0 END) AS SQD2_4,
+          SUM(CASE WHEN fk_questions = 2 AND answer_value = 3 THEN 1 ELSE 0 END) AS SQD2_3,
+          SUM(CASE WHEN fk_questions = 2 AND answer_value = 2 THEN 1 ELSE 0 END) AS SQD2_2,
+          SUM(CASE WHEN fk_questions = 2 AND answer_value = 1 THEN 1 ELSE 0 END) AS SQD2_1,
+          SUM(CASE WHEN fk_questions = 2 AND answer_value = 0 THEN 1 ELSE 0 END) AS SQD2_0,
+          COUNT(DISTINCT CASE WHEN fk_questions = 2 THEN fk_feedback END) AS SQD2_total_respondents,
+          SUM(CASE WHEN fk_questions = 2 THEN answer_value ELSE 0 END) AS SQD2_total_score,
+          ROUND(AVG(CASE WHEN fk_questions = 2 THEN answer_value END), 2) AS SQD2_avg,
+
+          -- SQD3 - Access and Facilities
+          SUM(CASE WHEN fk_questions = 3 AND answer_value = 5 THEN 1 ELSE 0 END) AS SQD3_5,
+          SUM(CASE WHEN fk_questions = 3 AND answer_value = 4 THEN 1 ELSE 0 END) AS SQD3_4,
+          SUM(CASE WHEN fk_questions = 3 AND answer_value = 3 THEN 1 ELSE 0 END) AS SQD3_3,
+          SUM(CASE WHEN fk_questions = 3 AND answer_value = 2 THEN 1 ELSE 0 END) AS SQD3_2,
+          SUM(CASE WHEN fk_questions = 3 AND answer_value = 1 THEN 1 ELSE 0 END) AS SQD3_1,
+          SUM(CASE WHEN fk_questions = 3 AND answer_value = 0 THEN 1 ELSE 0 END) AS SQD3_0,
+          COUNT(DISTINCT CASE WHEN fk_questions = 3 THEN fk_feedback END) AS SQD3_total_respondents,
+          SUM(CASE WHEN fk_questions = 3 THEN answer_value ELSE 0 END) AS SQD3_total_score,
+          ROUND(AVG(CASE WHEN fk_questions = 3 THEN answer_value END), 2) AS SQD3_avg,
+
+          -- SQD4 - Communication
+          SUM(CASE WHEN fk_questions = 4 AND answer_value = 5 THEN 1 ELSE 0 END) AS SQD4_5,
+          SUM(CASE WHEN fk_questions = 4 AND answer_value = 4 THEN 1 ELSE 0 END) AS SQD4_4,
+          SUM(CASE WHEN fk_questions = 4 AND answer_value = 3 THEN 1 ELSE 0 END) AS SQD4_3,
+          SUM(CASE WHEN fk_questions = 4 AND answer_value = 2 THEN 1 ELSE 0 END) AS SQD4_2,
+          SUM(CASE WHEN fk_questions = 4 AND answer_value = 1 THEN 1 ELSE 0 END) AS SQD4_1,
+          SUM(CASE WHEN fk_questions = 4 AND answer_value = 0 THEN 1 ELSE 0 END) AS SQD4_0,
+          COUNT(DISTINCT CASE WHEN fk_questions = 4 THEN fk_feedback END) AS SQD4_total_respondents,
+          SUM(CASE WHEN fk_questions = 4 THEN answer_value ELSE 0 END) AS SQD4_total_score,
+          ROUND(AVG(CASE WHEN fk_questions = 4 THEN answer_value END), 2) AS SQD4_avg,
+
+          -- SQD5 - Costs
+          SUM(CASE WHEN fk_questions = 5 AND answer_value = 5 THEN 1 ELSE 0 END) AS SQD5_5,
+          SUM(CASE WHEN fk_questions = 5 AND answer_value = 4 THEN 1 ELSE 0 END) AS SQD5_4,
+          SUM(CASE WHEN fk_questions = 5 AND answer_value = 3 THEN 1 ELSE 0 END) AS SQD5_3,
+          SUM(CASE WHEN fk_questions = 5 AND answer_value = 2 THEN 1 ELSE 0 END) AS SQD5_2,
+          SUM(CASE WHEN fk_questions = 5 AND answer_value = 1 THEN 1 ELSE 0 END) AS SQD5_1,
+          SUM(CASE WHEN fk_questions = 5 AND answer_value = 0 THEN 1 ELSE 0 END) AS SQD5_0,
+          COUNT(DISTINCT CASE WHEN fk_questions = 5 THEN fk_feedback END) AS SQD5_total_respondents,
+          SUM(CASE WHEN fk_questions = 5 THEN answer_value ELSE 0 END) AS SQD5_total_score,
+          ROUND(AVG(CASE WHEN fk_questions = 5 THEN answer_value END), 2) AS SQD5_avg,
+
+          -- SQD6 - Integrity
+          SUM(CASE WHEN fk_questions = 6 AND answer_value = 5 THEN 1 ELSE 0 END) AS SQD6_5,
+          SUM(CASE WHEN fk_questions = 6 AND answer_value = 4 THEN 1 ELSE 0 END) AS SQD6_4,
+          SUM(CASE WHEN fk_questions = 6 AND answer_value = 3 THEN 1 ELSE 0 END) AS SQD6_3,
+          SUM(CASE WHEN fk_questions = 6 AND answer_value = 2 THEN 1 ELSE 0 END) AS SQD6_2,
+          SUM(CASE WHEN fk_questions = 6 AND answer_value = 1 THEN 1 ELSE 0 END) AS SQD6_1,
+          SUM(CASE WHEN fk_questions = 6 AND answer_value = 0 THEN 1 ELSE 0 END) AS SQD6_0,
+          COUNT(DISTINCT CASE WHEN fk_questions = 6 THEN fk_feedback END) AS SQD6_total_respondents,
+          SUM(CASE WHEN fk_questions = 6 THEN answer_value ELSE 0 END) AS SQD6_total_score,
+          ROUND(AVG(CASE WHEN fk_questions = 6 THEN answer_value END), 2) AS SQD6_avg,
+
+          -- SQD7 - Assurance
+          SUM(CASE WHEN fk_questions = 7 AND answer_value = 5 THEN 1 ELSE 0 END) AS SQD7_5,
+          SUM(CASE WHEN fk_questions = 7 AND answer_value = 4 THEN 1 ELSE 0 END) AS SQD7_4,
+          SUM(CASE WHEN fk_questions = 7 AND answer_value = 3 THEN 1 ELSE 0 END) AS SQD7_3,
+          SUM(CASE WHEN fk_questions = 7 AND answer_value = 2 THEN 1 ELSE 0 END) AS SQD7_2,
+          SUM(CASE WHEN fk_questions = 7 AND answer_value = 1 THEN 1 ELSE 0 END) AS SQD7_1,
+          SUM(CASE WHEN fk_questions = 7 AND answer_value = 0 THEN 1 ELSE 0 END) AS SQD7_0,
+          COUNT(DISTINCT CASE WHEN fk_questions = 7 THEN fk_feedback END) AS SQD7_total_respondents,
+          SUM(CASE WHEN fk_questions = 7 THEN answer_value ELSE 0 END) AS SQD7_total_score,
+          ROUND(AVG(CASE WHEN fk_questions = 7 THEN answer_value END), 2) AS SQD7_avg,
+
+          -- SQD8 - Outcome
+          SUM(CASE WHEN fk_questions = 8 AND answer_value = 5 THEN 1 ELSE 0 END) AS SQD8_5,
+          SUM(CASE WHEN fk_questions = 8 AND answer_value = 4 THEN 1 ELSE 0 END) AS SQD8_4,
+          SUM(CASE WHEN fk_questions = 8 AND answer_value = 3 THEN 1 ELSE 0 END) AS SQD8_3,
+          SUM(CASE WHEN fk_questions = 8 AND answer_value = 2 THEN 1 ELSE 0 END) AS SQD8_2,
+          SUM(CASE WHEN fk_questions = 8 AND answer_value = 1 THEN 1 ELSE 0 END) AS SQD8_1,
+          SUM(CASE WHEN fk_questions = 8 AND answer_value = 0 THEN 1 ELSE 0 END) AS SQD8_0,
+          COUNT(DISTINCT CASE WHEN fk_questions = 8 THEN fk_feedback END) AS SQD8_total_respondents,
+          SUM(CASE WHEN fk_questions = 8 THEN answer_value ELSE 0 END) AS SQD8_total_score,
+          ROUND(AVG(CASE WHEN fk_questions = 8 THEN answer_value END), 2) AS SQD8_avg,
+
+          -- Overall Average Score
+          ROUND(AVG(answer_value), 2) AS overall_avg,
+
+          CASE 
+              WHEN ROUND(AVG(answer_value), 1) BETWEEN 4.5 AND 5.0 THEN 'O'
+              WHEN ROUND(AVG(answer_value), 1) BETWEEN 3.5 AND 4.49 THEN 'VS'
+              WHEN ROUND(AVG(answer_value), 1) BETWEEN 2.5 AND 3.49 THEN 'S'
+              WHEN ROUND(AVG(answer_value), 1) BETWEEN 1.5 AND 2.49 THEN 'US'
+              ELSE 'P'
+          END AS descriptive_rating
+
+      FROM filtered_answers;
+
+    `;
+
+    const [results] = await pool.execute(query, [
+      fk_division, 
+      fk_subdivision || null,
+      month,
+      year
+    ]);
+
+    res.json(results[0] || {});
+  } catch (err) {
+    console.error('Error executing query:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};

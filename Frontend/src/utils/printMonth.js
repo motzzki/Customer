@@ -6,7 +6,7 @@ import moment from "moment";
 import signNiSirChem from "../assets/Images/signNiSirChem.png";
 import signNiSirSDS from "../assets/Images/signNiSirSDS.png";
 
-export const handlePrintDateRange = (questions, divisionName, startDate, endDate, customerStats, results, customerType, service_name) => {
+export const handlePrintMonth = (questions, divisionName, startDate, customerStats, results) => {
   const headerLogoImg = headerLogo;
   const depedfooterimg = depedfooter;
   const bagongpilipinasimg = bagongpilipinas;
@@ -14,7 +14,7 @@ export const handlePrintDateRange = (questions, divisionName, startDate, endDate
 
   const division = divisionName;
 
-  console.log("handlePrintDateRange called with:", { questions, customerStats });
+  console.log("handlePrintMonth called with:", { questions, customerStats });
 
   const validQuestions = Array.isArray(questions) ? questions : [];
 
@@ -27,7 +27,7 @@ export const handlePrintDateRange = (questions, divisionName, startDate, endDate
       `;
     }
 
-    return validQuestions.slice(0, 4).map((question, index) => {
+    return validQuestions.slice(0, 5).map((question, index) => {
 
     return `
       <tr>
@@ -58,7 +58,7 @@ export const handlePrintDateRange = (questions, divisionName, startDate, endDate
     }
 
     return validQuestions
-  .slice(4, 8) // Slice to only the first 4 questions
+  .slice(5, 8) // Slice to only the first 4 questions
   .map((question, index) => {
     const count = index + 5; // Adjust index for SQD naming (SQD5, SQD6, etc.)
 
@@ -85,22 +85,17 @@ export const handlePrintDateRange = (questions, divisionName, startDate, endDate
   const printContent = `
   <html>
     <head>
-      <title>Customer Feedback Report</title>
+      <title>Customer Feedback Report - ${moment(startDate, "MMMM YYYY").format("MMMM YYYY")} - ${division}</title>
+
       <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
+
       <style>
   @page {
     size: Letter;
     margin: 0;
   }
-
      @media print {
 
-    body {
-      font-size: 12pt !important;
-    }
-    .report-header p {
-      font-size: 12pt !important;
-    }
     table {
       font-size: 11pt !important;
     }
@@ -121,9 +116,7 @@ export const handlePrintDateRange = (questions, divisionName, startDate, endDate
 
   /* Content wrapper that respects internal margins */
   .page-content {
-    padding: 100px 50px 80px 50px; /* top, right, bottom, left */
-    font-family: 'Bookman Old Style', serif;
-    font-size: 15px;
+    padding: 100px 50px 80px 50px;
     padding-top: 2.2in;
   }
 
@@ -222,7 +215,6 @@ export const handlePrintDateRange = (questions, divisionName, startDate, endDate
     padding: 10px;
     text-align: center;
     word-wrap: break-word;
-    height: 3em;
   }
 
   th:first-child, td:first-child {
@@ -251,7 +243,7 @@ export const handlePrintDateRange = (questions, divisionName, startDate, endDate
   }
 
   .old-english {
-    font-family: 'Old English Text MT', cursive, sans-serif;
+    font-family: "Old English Text MT", cursive, sans-serif;
   }
 
   .trajan {
@@ -291,13 +283,9 @@ export const handlePrintDateRange = (questions, divisionName, startDate, endDate
               <span class="divisionName">${division}</span>
             </div>
             <div>
-               <b>PERIOD: <span class="serviceName">${moment(startDate, "MMMM").format("MMMM")} - ${endDate}</b></span>
+               <b>PERIOD: <span class="serviceName">${moment(startDate, "MMMM YYYY").format("MMMM YYYY")}</b></span>
             </div>
           </div>
-        </div>
-        <div>
-          <b>Purpose of Transaction:</b>
-          <span class="divisionName">${service_name}</span>
         </div>
 
         <div>
@@ -307,6 +295,7 @@ export const handlePrintDateRange = (questions, divisionName, startDate, endDate
           <div>
             <b>Sex: <span class="serviceName">Male: ${customerStats.total_male} Female: ${customerStats.total_female}</span></b>
           </div>
+          
           <div style="margin-right: 0.4in;">
             <b>Age: 
               19-Lower: <span class="serviceName">${customerStats.total_age_19_lower}</span> 
@@ -317,11 +306,11 @@ export const handlePrintDateRange = (questions, divisionName, startDate, endDate
             </b>
           </div>
         </div>
-
-
-        <div>
-          <b>Client Type: <span class="serviceName">${customerType}</span></b>
-        </div>
+         <div>
+              <b>Business: <span class="serviceName">${customerStats.total_business}</span></b>
+              <b>Citizen: <span class="serviceName">${customerStats.total_citizen}</span></b>
+               <b>Government: <span class="serviceName">${customerStats.total_government}</span></b>
+          </div>
 
         <table>
           <thead>
@@ -343,10 +332,18 @@ export const handlePrintDateRange = (questions, divisionName, startDate, endDate
              ${generateTableRows1to4()}
           </tbody>
         </table>
-        <div style="height: 450px"></div>
+        <div style="height: 400px"></div>
         <table>
           <tbody>
              ${generateTableRows5to8()}
+             <tr>
+              <td colspan="9">Overall Ratings</td>
+              <td>${results.overall_avg}</td>
+             </tr>
+             <tr>
+              <td colspan="9">Descriptive Ratings</td>
+              <td>${results.descriptive_rating}</td>
+             </tr>
           </tbody>
         </table>
 
@@ -355,7 +352,7 @@ export const handlePrintDateRange = (questions, divisionName, startDate, endDate
             <div>Prepared by:</div>
             <br>
             <div>
-             
+              <!-- <img src="${signNiSirChem}" alt="Signature" style="position: absolute; left: 100px; top: 1755px; width: 1.5in; height: 0.5in; margin-bottom: 0.2em;" /> -->
             </div>
             <div><b>CHEM JAYDER M. CABUNGCAL</b></div>
             <div><i>Information Technology Officer I</i></div>
@@ -365,7 +362,7 @@ export const handlePrintDateRange = (questions, divisionName, startDate, endDate
             <div>Noted by:</div>
             <br>
             <div>
-              
+               <!-- <img src="${signNiSirSDS}" alt="Signature" style="position: absolute; left: 90px; top: 1855px; width: 1.5in; height: 0.5in; margin-bottom: 0.2em;" /> -->
             </div>
             <div><b>CHRISTOPHER R. DIAZ, CESO V</b></div>
             <div><i>Schools Division Superintendent</i></div>

@@ -10,6 +10,10 @@ import {
   insertFeedback,
   getServicesAndSubdivisions,
   getFeedBackData,
+  getCustomerStats,
+  getSurveyResults,
+  getCustomerStatsMonth,
+  getSurveyResultsMonth,
 } from "../controller/divisionController.js";
 
 import { verifyToken } from "../middleware/auth.js";
@@ -29,5 +33,9 @@ router.get(
 
 router.get("/feedback-data", getFeedBackData);
 router.post("/insert-feedback", insertFeedback);
+router.get("/customer-stats", getCustomerStats);
+router.get("/survey-results", getSurveyResults);
+router.get("/customer-stats-month", getCustomerStatsMonth);
+router.get("/survey-results-month", getSurveyResultsMonth);
 
 export default router;
