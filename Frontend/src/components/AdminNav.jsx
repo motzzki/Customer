@@ -13,26 +13,13 @@ import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import navLogo from "../assets/Images/logo.png";
 import ChangePasswordModal from "./modal/ChangePasswordModal";
-import NewUser from "./modal/NewUser";
 import { AuthContext } from "../auth/AuthContext.jsx";
 
 const AdminNav = () => {
   const navigate = useNavigate();
-  const { user } = useContext(AuthContext); // Assuming you have a context for user data
-  // const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-
-  // // Listen for screen size changes
-  // React.useEffect(() => {
-  //   const handleResize = () => setIsMobile(window.innerWidth < 768);
-  //   window.addEventListener("resize", handleResize);
-  //   return () => window.removeEventListener("resize", handleResize);
-  // }, []);
+  const { user } = useContext(AuthContext);
 
   const [showModal, setShowModal] = useState(false);
-  const [showNewUserModal, setShowNewUserModal] = useState(false);
-
-  const handleShowNewUser = () => setShowNewUserModal(true);
-  const handleCloseNewUser = () => setShowNewUserModal(false);
 
   const handleShow = () => setShowModal(true);
   const handleClose = () => setShowModal(false);
@@ -93,9 +80,7 @@ const AdminNav = () => {
                   Change Password
                 </NavDropdown.Item>
                 {user?.role === "admin" && (
-                  <NavDropdown.Item onClick={handleShowNewUser}>
-                    Add New User
-                  </NavDropdown.Item>
+                  <NavDropdown.Item href="/accounts">Accounts</NavDropdown.Item>
                 )}
                 <NavDropdown.Divider />
                 <NavDropdown.Item onClick={handleLogout}>
@@ -109,7 +94,6 @@ const AdminNav = () => {
 
       <ChangePasswordModal show={showModal} handleClose={handleClose} />
       {/* Add New User Modal */}
-      <NewUser show={showNewUserModal} handleClose={handleCloseNewUser} />
     </>
   );
 };

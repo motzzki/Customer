@@ -145,7 +145,7 @@ const CardDivision = () => {
                 )
             )}
 
-            {user?.role === "admin" && (
+            {/* {user?.role === "admin" && (
               <div className="col-md-4 col-sm-6 mb-3 d-flex">
                 <Card
                   className="custom-card d-flex flex-column justify-content-center align-items-center text-center shadow bg-light"
@@ -161,17 +161,17 @@ const CardDivision = () => {
                   </CardBody>
                 </Card>
               </div>
-            )}
+            )} */}
           </>
         )}
       </div>
 
       {/* Add Division Modal */}
-      <AddDivisionModal
+      {/* <AddDivisionModal
         show={showModal}
         handleClose={handleClose}
         handleSave={handleSave}
-      />
+      /> */}
       <EditDivisionModal
         show={showEditModal}
         handleClose={handleCloseEdit}

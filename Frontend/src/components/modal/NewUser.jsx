@@ -11,7 +11,7 @@ import { FaEye, FaEyeSlash } from "react-icons/fa";
 import axios from "axios";
 import { API_BASE_URL } from "../../config";
 
-const NewUser = ({ show, handleClose }) => {
+const NewUser = ({ show, handleClose, onSave }) => {
   const [userData, setUserData] = useState({
     username: "",
     password: "",
@@ -71,6 +71,9 @@ const NewUser = ({ show, handleClose }) => {
           firstname: "",
           lastname: "",
         });
+
+        onSave();
+        handleClose();
       } else {
         setError("Something went wrong.");
       }

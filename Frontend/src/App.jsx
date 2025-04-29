@@ -12,6 +12,7 @@ import ClientSatisfaction from "./pages/ClientSatisfaction";
 import Protected from "./pages/Protected";
 import Thankyou from "./pages/thankyou";
 import DivisionPage from "./pages/DivisionPage";
+import Accounts from "./pages/Accounts";
 
 // "username": "admin1",
 // "password": "sdocabuyao"
@@ -33,6 +34,7 @@ function App() {
         <Route element={<Protected />}>
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/divisions/:division_id" element={<DivisionPage />} />
+          <Route path="/accounts" element={<Accounts />} />
         </Route>
       </Routes>
     </Router>
