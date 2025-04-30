@@ -6,7 +6,6 @@ import { API_BASE_URL } from "../config";
 import axios from "axios";
 import moment from "moment";
 import DatePicker from "react-datepicker";
-// import { handlePrint } from "../utils/printUtils";
 
 import "react-datepicker/dist/react-datepicker.css";
 import PrintModal from "../components/modal/printModal";
@@ -66,11 +65,19 @@ const DivisionPage = () => {
         division_id,
         filterCustomer,
         selectedService,
+        selectedSubdivision,
         startDate,
         endDate
       );
     }
-  }, [division_id, filterCustomer, selectedService, startDate, endDate]);
+  }, [
+    division_id,
+    filterCustomer,
+    selectedService,
+    selectedSubdivision,
+    startDate,
+    endDate,
+  ]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -123,40 +130,14 @@ const DivisionPage = () => {
     fetchData();
   }, [division_id]);
 
-  const fetchFeedbackData = async (division, subdivision, service) => {
-    try {
-      const token = localStorage.getItem("token");
-
-      const response = await axios.get(
-        `${API_BASE_URL}/divisions/feedback-data`,
-        {
-          params: {
-            fk_division: division,
-            fk_subdivision: subdivision,
-            fk_service: service,
-          },
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      return response.data;
-    } catch (error) {
-      console.error("Error fetching feedback data:", error);
-      return { summary: {}, details: [] };
-    }
-  };
-
   const selectedServiceId = selectedService?.service_id || null;
   const selectedSubdivisionId = selectedSubdivision?.sub_division_id || null;
-
 
   const fetchFeedbackByDivision = async (
     division_id,
     filterCustomer,
     selectedService,
+    selectedSubdivision,
     startDate,
     endDate
   ) => {
@@ -164,12 +145,18 @@ const DivisionPage = () => {
       const token = localStorage.getItem("token");
       const params = new URLSearchParams();
 
-      if (filterCustomer?.customer_type) {
-        params.append("customer_type", filterCustomer.customer_type);
+      if (filterCustomer) {
+        params.append("customer_type", filterCustomer);
       }
+
+      console.log("Customer: ", filterCustomer?.customer_type);
 
       if (selectedService?.service_name) {
         params.append("service", selectedService.service_name);
+      }
+
+      if (selectedSubdivision?.sub_division_name) {
+        params.append("subdivision_id", selectedSubdivision?.sub_division_name);
       }
 
       if (startDate) {
@@ -180,6 +167,8 @@ const DivisionPage = () => {
         params.append("end_date", endDate.toISOString().split("T")[0]);
       }
 
+      console.log("API request params:", params.toString());
+
       const response = await axios.get(
         `${API_BASE_URL}/divisions/get-feedback/${division_id}?${params.toString()}`,
         {
@@ -189,43 +178,20 @@ const DivisionPage = () => {
         }
       );
 
+      console.log("API response data:", response.data);
       setData(response.data);
     } catch (error) {
       console.error("Error fetching feedback:", error);
     }
   };
 
-  const filteredData = data.filter((item) => {
-    const matchesCustomerType =
-      filterCustomer === "" || item.customer_type === filterCustomer;
-
-    const matchesSubdivision =
-      !selectedSubdivision ||
-      item.fk_subdivision === selectedSubdivision?.sub_division_id;
-
-    const matchesService =
-      !selectedService ||
-      item.fk_service === selectedService?.service_id ||
-      item.service === selectedService?.service_name;
-
-    const itemDate = new Date(item.created_at);
-    const matchesDate =
-      (!startDate || itemDate >= startDate) &&
-      (!endDate || itemDate <= endDate);
-
-    return (
-      matchesCustomerType && matchesSubdivision && matchesService && matchesDate
-    );
-  });
-
   // 4. Final filtered data
-  const filteredByDate = filteredData;
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredByDate.slice(indexOfFirstItem, indexOfLastItem);
+  const currentItems = data.slice(indexOfFirstItem, indexOfLastItem);
 
-  const totalPages = Math.ceil(filteredByDate.length / itemsPerPage);
+  const totalPages = Math.ceil(data.length / itemsPerPage);
 
   const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
 
@@ -238,7 +204,7 @@ const DivisionPage = () => {
     setCurrentPage(1);
   };
 
-  const hasSubDivision = filteredData.some((item) => item.sub_division_name);
+  const hasSubDivision = data.some((item) => item?.sub_division_name);
 
   const renderPagination = () => {
     const pageNumbers = [];
@@ -489,7 +455,12 @@ const DivisionPage = () => {
           {renderPagination()}
         </div>
       </Card>
-      <PrintModal show={showNewPrintModal} handleClose={handleClosePrintModal} division_id={division_id} division_name={division_name} />
+      <PrintModal
+        show={showNewPrintModal}
+        handleClose={handleClosePrintModal}
+        division_id={division_id}
+        division_name={division_name}
+      />
     </div>
   );
 };

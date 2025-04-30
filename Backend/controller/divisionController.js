@@ -279,105 +279,106 @@ export const getServicesAndSubdivisions = async (req, res) => {
   }
 };
 
-export const getFeedBackData = async (req, res) => {
-  const { fk_division, fk_subdivision, fk_service, customer_type } = req.query;
+// export const getFeedBackData = async (req, res) => {
+//   const { fk_division, fk_subdivision, fk_service, customer_type } = req.query;
 
-  if (!fk_division || !fk_service) {
-    return res.status(400).json({
-      message: "fk_division and fk_service are required",
-    });
-  }
+//   if (!fk_division || !fk_service) {
+//     return res.status(400).json({
+//       message: "fk_division and fk_service are required",
+//     });
+//   }
 
-  try {
-    const query = `
-     SELECT
-        f.fk_division AS division_id,
-        f.fk_subdivision AS subdivision_id,
-        q.questions_id,
-        q.questions_text,
-        AVG(a.answer_value) AS average_score,
-        COUNT(DISTINCT f.fk_customer) AS total_respondents,
-        SUM(CASE WHEN c.gender = 'male' THEN 1 ELSE 0 END) AS total_males,
-        SUM(CASE WHEN c.gender = 'female' THEN 1 ELSE 0 END) AS total_females,
-        CASE 
-          WHEN c.age BETWEEN 19 AND 25 THEN '19-25'
-          WHEN c.age BETWEEN 26 AND 35 THEN '26-35'
-          WHEN c.age BETWEEN 36 AND 45 THEN '36-45'
-          ELSE '46+'
-        END AS age_bracket,
-        c.customer_type,
-        s.service_name AS service_availed
-      FROM feedback_answers a
-      JOIN feedback f ON f.feedback_id = a.fk_feedback
-      JOIN questions q ON q.questions_id = a.fk_questions
-      JOIN customer c ON c.customer_id = f.fk_customer
-      LEFT JOIN services s ON s.service_id = f.fk_service
-      WHERE f.fk_division = ?
-        AND (f.fk_subdivision = ? OR f.fk_subdivision IS NULL)
-        AND f.fk_service = ?
-        AND c.customer_type = ?
-      GROUP BY
-        f.fk_division,
-        f.fk_subdivision,
-        q.questions_id,
-        q.questions_text,
-        CASE 
-          WHEN c.age BETWEEN 19 AND 25 THEN '19-25'
-          WHEN c.age BETWEEN 26 AND 35 THEN '26-35'
-          WHEN c.age BETWEEN 36 AND 45 THEN '36-45'
-          ELSE '46+'
-        END,
-        c.customer_type,
-        s.service_name
-      ORDER BY
-        f.fk_division,
-        f.fk_subdivision,
-        q.questions_id;
-    `;
+//   try {
+//     const query = `
+//      SELECT
+//         f.fk_division AS division_id,
+//         f.fk_subdivision AS subdivision_id,
+//         q.questions_id,
+//         q.questions_text,
+//         AVG(a.answer_value) AS average_score,
+//         COUNT(DISTINCT f.fk_customer) AS total_respondents,
+//         SUM(CASE WHEN c.gender = 'male' THEN 1 ELSE 0 END) AS total_males,
+//         SUM(CASE WHEN c.gender = 'female' THEN 1 ELSE 0 END) AS total_females,
+//         CASE
+//           WHEN c.age BETWEEN 19 AND 25 THEN '19-25'
+//           WHEN c.age BETWEEN 26 AND 35 THEN '26-35'
+//           WHEN c.age BETWEEN 36 AND 45 THEN '36-45'
+//           ELSE '46+'
+//         END AS age_bracket,
+//         c.customer_type,
+//         s.service_name AS service_availed
+//       FROM feedback_answers a
+//       JOIN feedback f ON f.feedback_id = a.fk_feedback
+//       JOIN questions q ON q.questions_id = a.fk_questions
+//       JOIN customer c ON c.customer_id = f.fk_customer
+//       LEFT JOIN services s ON s.service_id = f.fk_service
+//       WHERE f.fk_division = ?
+//         AND (f.fk_subdivision = ? OR f.fk_subdivision IS NULL)
+//         AND f.fk_service = ?
+//         AND c.customer_type = ?
+//       GROUP BY
+//         f.fk_division,
+//         f.fk_subdivision,
+//         q.questions_id,
+//         q.questions_text,
+//         CASE
+//           WHEN c.age BETWEEN 19 AND 25 THEN '19-25'
+//           WHEN c.age BETWEEN 26 AND 35 THEN '26-35'
+//           WHEN c.age BETWEEN 36 AND 45 THEN '36-45'
+//           ELSE '46+'
+//         END,
+//         c.customer_type,
+//         s.service_name
+//       ORDER BY
+//         f.fk_division,
+//         f.fk_subdivision,
+//         q.questions_id;
+//     `;
 
-    const [results] = await pool.query(query, [
-      fk_division,
-      fk_subdivision,
-      fk_subdivision,
-      fk_service,
-      customer_type,
-    ]);
+//     const [results] = await pool.query(query, [
+//       fk_division,
+//       fk_subdivision,
+//       fk_subdivision,
+//       fk_service,
+//       customer_type,
+//     ]);
 
-    let totalSqd = {
-      total_sqd1: 0,
-      total_sqd2: 0,
-      total_sqd3: 0,
-      total_sqd4: 0,
-      total_sqd5: 0,
-      total_sqd6: 0,
-      total_sqd7: 0,
-      total_sqd8: 0,
-    };
+//     let totalSqd = {
+//       total_sqd1: 0,
+//       total_sqd2: 0,
+//       total_sqd3: 0,
+//       total_sqd4: 0,
+//       total_sqd5: 0,
+//       total_sqd6: 0,
+//       total_sqd7: 0,
+//       total_sqd8: 0,
+//     };
 
-    results.forEach((row) => {
-      totalSqd.total_sqd1 += Number(row.sqd1) || 0;
-      totalSqd.total_sqd2 += Number(row.sqd2) || 0;
-      totalSqd.total_sqd3 += Number(row.sqd3) || 0;
-      totalSqd.total_sqd4 += Number(row.sqd4) || 0;
-      totalSqd.total_sqd5 += Number(row.sqd5) || 0;
-      totalSqd.total_sqd6 += Number(row.sqd6) || 0;
-      totalSqd.total_sqd7 += Number(row.sqd7) || 0;
-      totalSqd.total_sqd8 += Number(row.sqd8) || 0;
-    });
+//     results.forEach((row) => {
+//       totalSqd.total_sqd1 += Number(row.sqd1) || 0;
+//       totalSqd.total_sqd2 += Number(row.sqd2) || 0;
+//       totalSqd.total_sqd3 += Number(row.sqd3) || 0;
+//       totalSqd.total_sqd4 += Number(row.sqd4) || 0;
+//       totalSqd.total_sqd5 += Number(row.sqd5) || 0;
+//       totalSqd.total_sqd6 += Number(row.sqd6) || 0;
+//       totalSqd.total_sqd7 += Number(row.sqd7) || 0;
+//       totalSqd.total_sqd8 += Number(row.sqd8) || 0;
+//     });
 
-    res.status(200).json({
-      summary: totalSqd,
-      details: results,
-    });
-  } catch (error) {
-    console.error("Error fetching feedback data:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-};
+//     res.status(200).json({
+//       summary: totalSqd,
+//       details: results,
+//     });
+//   } catch (error) {
+//     console.error("Error fetching feedback data:", error);
+//     res.status(500).json({ message: "Internal server error" });
+//   }
+// };
 
 export const getFeedbackByDivision = async (req, res) => {
   const { division_id } = req.params;
-  const { customer_type, service, start_date, end_date } = req.query;
+  const { customer_type, service, subdivision_id, start_date, end_date } =
+    req.query;
 
   try {
     let baseQuery = `
@@ -386,6 +387,8 @@ export const getFeedbackByDivision = async (req, res) => {
         c.gender,
         c.customer_type,
         f.service,
+        f.fk_subdivision,
+        sd.sub_division_name, 
         f.charter_one,
         f.charter_two,
         f.charter_three,
@@ -401,6 +404,7 @@ export const getFeedbackByDivision = async (req, res) => {
         f.created_at
       FROM feedback f
       JOIN customer c ON c.customer_id = f.fk_customer
+      LEFT JOIN sub_division sd ON sd.sub_division_id = f.fk_subdivision  
       LEFT JOIN feedback_answers fa ON fa.fk_feedback = f.feedback_id
       LEFT JOIN questions q ON q.questions_id = fa.fk_questions
       WHERE f.fk_division = ?
@@ -416,6 +420,11 @@ export const getFeedbackByDivision = async (req, res) => {
     if (service) {
       baseQuery += " AND f.service = ?";
       params.push(service);
+    }
+
+    if (subdivision_id) {
+      baseQuery += " AND sd.sub_division_name = ?";
+      params.push(subdivision_id);
     }
 
     if (start_date && end_date) {
@@ -440,18 +449,18 @@ export const getFeedbackByDivision = async (req, res) => {
 
 export const getCustomerStats = async (req, res) => {
   // Get parameters from query string instead of body
-  const { 
-    fk_division, 
-    fk_service, 
-    fk_subdivision, 
+  const {
+    fk_division,
+    fk_service,
+    fk_subdivision,
     customer_type,
-    startDate, 
-    endDate 
+    startDate,
+    endDate,
   } = req.query;
 
   if (!fk_division || !fk_service) {
-    return res.status(400).json({ 
-      message: "fk_division and fk_service are required" 
+    return res.status(400).json({
+      message: "fk_division and fk_service are required",
     });
   }
 
@@ -480,37 +489,37 @@ export const getCustomerStats = async (req, res) => {
     `;
 
     const [results] = await pool.execute(query, [
-      fk_division, 
-      fk_service || null, 
+      fk_division,
+      fk_service || null,
       fk_service || null, // Handle fk_service being null in SQL
       fk_subdivision || null,
       customer_type || null,
       customer_type || null, // Handle customer_type being null in SQL
-      startDate, 
-      endDate || '9999-12-31' // Default to a far future date if endDate is not provided
+      startDate,
+      endDate || "9999-12-31", // Default to a far future date if endDate is not provided
     ]);
 
     res.json(results[0] || {});
   } catch (err) {
-    console.error('Error executing query:', err);
-    res.status(500).json({ error: 'Internal Server Error' });
+    console.error("Error executing query:", err);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
 export const getSurveyResults = async (req, res) => {
   // Get parameters from query string instead of body
-  const { 
-    fk_division, 
-    fk_service, 
-    fk_subdivision, 
+  const {
+    fk_division,
+    fk_service,
+    fk_subdivision,
     customer_type,
-    startDate, 
-    endDate 
+    startDate,
+    endDate,
   } = req.query;
 
   if (!fk_division || !fk_service) {
-    return res.status(400).json({ 
-      message: "fk_division and fk_service are required" 
+    return res.status(400).json({
+      message: "fk_division and fk_service are required",
     });
   }
 
@@ -634,31 +643,26 @@ export const getSurveyResults = async (req, res) => {
     `;
 
     const [results] = await pool.execute(query, [
-      fk_division, 
-      fk_service || null, 
+      fk_division,
+      fk_service || null,
       fk_service || null, // Handle fk_service being null in SQL
       fk_subdivision || null,
       customer_type || null,
       customer_type || null, // Handle customer_type being null in SQL
-      startDate, 
-      endDate // Default to a far future date if endDate is not provided
+      startDate,
+      endDate, // Default to a far future date if endDate is not provided
     ]);
 
     res.json(results[0] || {});
   } catch (err) {
-    console.error('Error executing query:', err);
-    res.status(500).json({ error: 'Internal Server Error' });
+    console.error("Error executing query:", err);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
 export const getCustomerStatsMonth = async (req, res) => {
   // Get parameters from query string instead of body
-  const { 
-    fk_division, 
-    fk_subdivision, 
-    month, 
-    year 
-  } = req.query;
+  const { fk_division, fk_subdivision, month, year } = req.query;
 
   try {
     const query = `
@@ -685,27 +689,22 @@ export const getCustomerStatsMonth = async (req, res) => {
     `;
 
     const [results] = await pool.execute(query, [
-      fk_division, 
-      fk_subdivision, 
-      month, 
-      year 
+      fk_division,
+      fk_subdivision,
+      month,
+      year,
     ]);
 
     res.json(results[0] || {});
   } catch (err) {
-    console.error('Error executing query:', err);
-    res.status(500).json({ error: 'Internal Server Error' });
+    console.error("Error executing query:", err);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
 export const getSurveyResultsMonth = async (req, res) => {
   // Get parameters from query string instead of body
-  const { 
-    fk_division, 
-    fk_subdivision, 
-    month, 
-    year 
-  } = req.query;
+  const { fk_division, fk_subdivision, month, year } = req.query;
 
   try {
     const query = `
@@ -826,15 +825,15 @@ export const getSurveyResultsMonth = async (req, res) => {
     `;
 
     const [results] = await pool.execute(query, [
-      fk_division, 
+      fk_division,
       fk_subdivision || null,
       month,
-      year
+      year,
     ]);
 
     res.json(results[0] || {});
   } catch (err) {
-    console.error('Error executing query:', err);
-    res.status(500).json({ error: 'Internal Server Error' });
+    console.error("Error executing query:", err);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
